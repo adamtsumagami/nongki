@@ -1,0 +1,66 @@
+@font-face {
+  font-family: 'Arnel';
+  src: url('/assets/fonts/Arnel-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Arnel Drawn';
+  src: url('/assets/fonts/Arnel-Drawn.otf') format('opentype');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Arnel Stamp';
+  src: url('/assets/fonts/Arnel-Stamp.otf') format('opentype');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lovely Mess';
+  src: url('/assets/fonts/lovelymess-webfont.woff2') format('woff2'),
+    url('/assets/fonts/lovelymess-webfont.woff') format('woff');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Akzidenz Grotesk BE';
+  src: url('/assets/fonts/AkzidenzGroteskBE-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Akzidenz Grotesk BE';
+  src: url('/assets/fonts/AkzidenzGroteskBE-MdCn.otf') format('opentype');
+  font-weight: 500;
+  font-stretch: condensed;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Akzidenz Grotesk BE';
+  src: url('/assets/fonts/AkzidenzGroteskBE-MdEx.otf') format('opentype');
+  font-weight: 500;
+  font-stretch: expanded;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Makking';
+  src: url('/assets/fonts/Makking-SemiBold.otf') format('opentype');
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Makking';
+  src: url('/assets/fonts/Makking-ExtraBold.otf') format('opentype');
+  font-weight: 800;
+  font-display: swap;
+}
