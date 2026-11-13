@@ -9,7 +9,7 @@
 
 ---
 
-## 📖 Tentang Nongki
+## Tentang Nongki
 
 **Nongki** adalah platform web direktori dan panduan eksplorasi *coffee shop* serta kafe yang berlokasi di **Kota Pontianak, Kalimantan Barat**. 
 
@@ -19,9 +19,9 @@ Pontianak terkenal dengan tradisi ngopinya yang begitu kental—dari deretan war
 
 ---
 
-## ✨ Fitur Unggulan
+## Fitur Unggulan
 
-### 1. 🗂️ Direktori & Katalog Cafe Pontianak
+### 1. Direktori & Katalog Cafe Pontianak
 * **Database Lengkap**: Jelajahi kafe dan coffee shop di berbagai kawasan Pontianak.
 * **Filter Sesuai Kebutuhan**: Saring tempat berdasarkan:
   * Suasana: *Cozy, Outdoor, Work From Cafe (WFC), Aesthetic/Instagramable, Late Night*.
@@ -29,23 +29,23 @@ Pontianak terkenal dengan tradisi ngopinya yang begitu kental—dari deretan war
   * Kawasan/Kecamatan & rentang harga (*budget-friendly* s/d *specialty coffee*).
 * **Profil Detail**: Alamat & tautan Google Maps, jam operasional, menu andalan, dan tautan media sosial.
 
-### 2. 🎲 Random Cafe Picker (*"Gacha Tongkrongan"*)
+### 2. Random Cafe Picker (*"Gacha Tongkrongan"*)
 * Solusi instan untuk perdebatan abadi *"Terserah mau ke mana"*.
 * Cukup tekan satu tombol, sistem akan memilihkan kafe secara acak dari database.
 * Dilengkapi opsi kriteria kilat (misal: hanya kafe yang buka sekarang, punya Wi-Fi, atau dalam radius tertentu).
 
-### 3. 🌟 Cafe of the Day
+### 3. Cafe of the Day
 * Rekomendasi harian terkurasi yang diperbarui setiap hari.
 * Menyorot *hidden gem* lokal, kafe bernuansa unik, atau tempat dengan promo/menu musiman yang wajib dicoba hari ini.
 
-### 4. 📌 Cafe Bucketlist
+### 4. Cafe Bucketlist
 * **Wishlist Pribadi**: Simpan kafe-kafe menarik yang ingin dikunjungi di akhir pekan.
 * **Tandai Sudah Dikunjungi**: Catat perjalanan *cafe-hopping* kamu di Pontianak.
 * Tersimpan rapi di browser sehingga daftar favoritmu selalu siap diakses kapan saja.
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 Project ini dibangun menggunakan teknologi web modern untuk memastikan performa yang cepat, interaksi yang mulus, dan pengalaman pengguna yang responsif:
 
@@ -59,7 +59,7 @@ Project ini dibangun menggunakan teknologi web modern untuk memastikan performa 
 
 ---
 
-## 📁 Struktur Direktori
+## Struktur Direktori
 
 ```text
 nongki/
@@ -79,7 +79,7 @@ nongki/
 
 ---
 
-## 🚀 Memulai (Getting Started)
+## Memulai (Getting Started)
 
 Ikuti langkah-langkah berikut untuk menjalankan proyek ini di komputer lokal Anda:
 
@@ -118,7 +118,7 @@ npm run test
 
 ---
 
-## 🗺️ Roadmap Pengembangan
+## Roadmap Pengembangan
 
 - [x] Inisialisasi struktur proyek dan desain tema utama
 - [ ] Integrasi database katalog kafe Pontianak (alamat, jam buka, fasilitas)
@@ -130,7 +130,7 @@ npm run test
 
 ---
 
-## 🤝 Berkontribusi
+## Berkontribusi
 
 Punya rekomendasi *coffee shop* favorit di Pontianak atau ingin membantu menyempurnakan fitur Nongki? Kontribusi sangat terbuka!
 
@@ -151,7 +151,7 @@ Punya rekomendasi *coffee shop* favorit di Pontianak atau ingin membantu menyemp
 
 ---
 
-## 📄 Lisensi
+## Lisensi
 
 Proyek ini dirilis di bawah lisensi [MIT](LICENSE).
 
