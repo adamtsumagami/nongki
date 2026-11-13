@@ -1,7 +1,9 @@
 {
-  "name": "apocalypse-coffee-1to1",
+  "name": "nongki",
   "private": true,
   "version": "1.0.0",
+  "description": "Curated directory and discovery platform for coffee shops and cafes in Pontianak.",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
