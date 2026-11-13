@@ -12,7 +12,7 @@ function mountHtmlAndBoot() {
   }
 }
 
-describe('1:1 Apocalypse Coffee Reconstruction', () => {
+describe('Nongki Platform', () => {
   beforeAll(async () => {
     mountHtmlAndBoot();
     await import('./main');

@@ -1,4 +1,4 @@
-/* Apocalypse Coffee — global theme JS.
+/* Nongki — global theme JS.
    Small per-section "islands" that re-initialise on shopify:section:load
    so everything keeps working inside the theme editor. No external libs:
    the mockup's GSAP/Locomotive/Matter effects are replaced with CSS
