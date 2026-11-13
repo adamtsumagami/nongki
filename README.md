@@ -1,213 +1,162 @@
-<a id="readme-top"></a>
+# ☕ Nongki — Direktori & Eksplorasi Cafe Pontianak
 
-<!-- PROJECT SHIELDS -->
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![MIT License][license-shield]][license-url]
+> **Temukan spot ngopi terbaik di Kota Khatulistiwa tanpa bingung lagi mau nongkrong di mana!**
 
-<!-- PROJECT LOGO -->
-<br />
-<div align="center">
-  <a href="https://github.com/adamtsumagami/nongki">
-    <img src="public/assets/favicon-180.png" alt="Logo" width="80" height="80">
-  </a>
+[![Vite](https://img.shields.io/badge/Vite-6.1-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Status](https://img.shields.io/badge/Status-In%20Development-orange)](#)
+[![Location](https://img.shields.io/badge/Focus-Pontianak%2C%20Kalbar-green)](#)
 
-  <h3 align="center">nongki</h3>
+---
 
-  <p align="center">
-    A curated directory and discovery tool for coffee shops and cafes across Pontianak.
-    <br />
-    <a href="https://github.com/adamtsumagami/nongki"><strong>Explore the docs »</strong></a>
-    <br />
-    <br />
-    <a href="https://github.com/adamtsumagami/nongki">View Demo</a>
-    ·
-    <a href="https://github.com/adamtsumagami/nongki/issues">Report Bug</a>
-    ·
-    <a href="https://github.com/adamtsumagami/nongki/issues">Request Feature</a>
-  </p>
-</div>
+## 📖 Tentang Nongki
 
-<!-- TABLE OF CONTENTS -->
-<details>
-  <summary>Table of Contents</summary>
-  <ol>
-    <li>
-      <a href="#about-the-project">About The Project</a>
-      <ul>
-        <li><a href="#built-with">Built With</a></li>
-      </ul>
-    </li>
-    <li><a href="#key-features">Key Features</a></li>
-    <li>
-      <a href="#getting-started">Getting Started</a>
-      <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
-      </ul>
-    </li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#contact">Contact</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
-  </ol>
-</details>
+**Nongki** adalah platform web direktori dan panduan eksplorasi *coffee shop* serta kafe yang berlokasi di **Kota Pontianak, Kalimantan Barat**. 
 
-<!-- ABOUT THE PROJECT -->
-## About The Project
+Pontianak terkenal dengan tradisi ngopinya yang begitu kental—dari deretan warkop legendaris di Jalan Gajah Mada hingga kafe-kafe modern dan *aesthetic* yang tersebar di Reformasi, Podomoro, Hijas, hingga Siantan. Namun, seringkali kita menghadapi dilema klasik: *"Mau nongkrong di mana hari ini?"* atau *"Ada rekomendasi tempat yang enak buat WFC gak?"*.
 
-Pontianak has a well-established coffee culture, ranging from traditional warkop hubs along Jalan Gajah Mada and Jalan Hijas to modern specialty cafes scattered across Reformasi, Podomoro, and Kota Baru. With so many options available, finding the right spot—or simply deciding where to go—often results in decision fatigue.
+**Nongki** hadir untuk menyelesaikan masalah tersebut dengan menyajikan kurasi kafe lengkap, interaktif, dan fitur-fitur seru untuk menemani gaya hidup nongkrong masyarakat Pontianak maupun wisatawan.
 
-**Nongki** is an interactive web platform designed to catalogue cafes and coffee shops in Pontianak, helping locals and visitors discover places that match their preferences. Beyond a standard directory, the project introduces practical decision-making tools:
+---
 
-* **Random Cafe Picker**: Eliminates group hesitation by rolling a random cafe based on user criteria.
-* **Cafe of the Day**: Highlights a daily curated pick to encourage discovering new spots.
-* **Cafe Bucketlist**: Lets users bookmark places they plan to visit and keep track of places they have already checked out.
+## ✨ Fitur Unggulan
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+### 1. 🗂️ Direktori & Katalog Cafe Pontianak
+* **Database Lengkap**: Jelajahi kafe dan coffee shop di berbagai kawasan Pontianak.
+* **Filter Sesuai Kebutuhan**: Saring tempat berdasarkan:
+  * Suasana: *Cozy, Outdoor, Work From Cafe (WFC), Aesthetic/Instagramable, Late Night*.
+  * Fasilitas: *Wi-Fi kencang, banyak colokan, area merokok (smoking area), musala, live music*.
+  * Kawasan/Kecamatan & rentang harga (*budget-friendly* s/d *specialty coffee*).
+* **Profil Detail**: Alamat & tautan Google Maps, jam operasional, menu andalan, dan tautan media sosial.
 
-### Built With
+### 2. 🎲 Random Cafe Picker (*"Gacha Tongkrongan"*)
+* Solusi instan untuk perdebatan abadi *"Terserah mau ke mana"*.
+* Cukup tekan satu tombol, sistem akan memilihkan kafe secara acak dari database.
+* Dilengkapi opsi kriteria kilat (misal: hanya kafe yang buka sekarang, punya Wi-Fi, atau dalam radius tertentu).
 
-* [![TypeScript][TypeScript]][TypeScript-url]
-* [![Vite][Vite]][Vite-url]
-* [![Lenis][Lenis]][Lenis-url]
-* [![Matter.js][Matter.js]][Matter-url]
+### 3. 🌟 Cafe of the Day
+* Rekomendasi harian terkurasi yang diperbarui setiap hari.
+* Menyorot *hidden gem* lokal, kafe bernuansa unik, atau tempat dengan promo/menu musiman yang wajib dicoba hari ini.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+### 4. 📌 Cafe Bucketlist
+* **Wishlist Pribadi**: Simpan kafe-kafe menarik yang ingin dikunjungi di akhir pekan.
+* **Tandai Sudah Dikunjungi**: Catat perjalanan *cafe-hopping* kamu di Pontianak.
+* Tersimpan rapi di browser sehingga daftar favoritmu selalu siap diakses kapan saja.
 
-<!-- KEY FEATURES -->
-## Key Features
+---
 
-* **Pontianak Cafe Catalog**: Search and filter venues by area, atmosphere (e.g., outdoor, quiet work-friendly, aesthetic), amenities (Wi-Fi, power outlets, smoking section), and pricing.
-* **Random Cafe Picker**: Quick randomizer with optional constraints (open now, specific subdistrict, or specific facilities) to settle indecision quickly.
-* **Cafe of the Day**: Daily featured recommendation showcasing local hidden gems and seasonal spots.
-* **Cafe Bucketlist**: Client-side saved wishlist to track visited venues and plan future visits without requiring account setup.
+## 🛠️ Tech Stack
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+Project ini dibangun menggunakan teknologi web modern untuk memastikan performa yang cepat, interaksi yang mulus, dan pengalaman pengguna yang responsif:
 
-<!-- GETTING STARTED -->
-## Getting Started
+* **Bundler & Tooling**: [Vite](https://vitejs.dev/)
+* **Language**: [TypeScript](https://www.typescriptlang.org/)
+* **Styling**: Modern CSS / Modular Styling
+* **Interactive & Animation**:
+  * [Lenis](https://lenis.darkroom.engineering/) — *Smooth Scrolling Experience*
+  * [Matter.js](https://brm.io/matter-js/) — *2D Physics Engine untuk animasi interaktif*
+* **Testing**: [Vitest](https://vitest.dev/) & [Testing Library](https://testing-library.com/)
 
-Follow these steps to set up and run the project locally.
+---
 
-### Prerequisites
+## 📁 Struktur Direktori
 
-* **Node.js** (v18.0.0 or higher recommended)
-* **npm**
-  ```sh
-  npm install npm@latest -g
-  ```
+```text
+nongki/
+├── public/              # Aset statis (gambar, icon, favicon)
+├── src/
+│   ├── runtime/         # Konfigurasi runtime & bootstrap globals
+│   ├── styles/          # File styling (base.css, fonts.css, layout)
+│   ├── vendor/          # Komponen script & modul pendukung
+│   ├── test/            # Setup test unit & integrasi
+│   ├── main.ts          # Entry point utama TypeScript
+│   └── vite-env.d.ts    # Deklarasi tipe lingkungan Vite
+├── index.html           # File markup HTML utama
+├── package.json         # Dependensi dan skrip npm
+├── tsconfig.json        # Konfigurasi TypeScript
+└── vite.config.ts       # Konfigurasi build Vite
+```
 
-### Installation
+---
 
-1. Clone the repository
-   ```sh
-   git clone https://github.com/adamtsumagami/nongki.git
-   cd nongki
+## 🚀 Memulai (Getting Started)
+
+Ikuti langkah-langkah berikut untuk menjalankan proyek ini di komputer lokal Anda:
+
+### Prasyarat
+Pastikan Anda sudah menginstal:
+* [Node.js](https://nodejs.org/) (versi 18.x atau lebih baru disarankan)
+* npm (biasanya terpasang bersama Node.js) atau pnpm / yarn
+
+### 1. Kloning Repositori
+```bash
+git clone https://github.com/adamtsumagami/nongki.git
+cd nongki
+```
+
+### 2. Instal Dependensi
+```bash
+npm install
+```
+
+### 3. Jalankan Server Pengembangan
+```bash
+npm run dev
+```
+Buka browser dan akses alamat lokal yang muncul di terminal (biasanya `http://localhost:5173`).
+
+### 4. Build untuk Produksi
+```bash
+npm run build
+```
+Hasil build siap *deploy* akan berada di dalam folder `dist/`.
+
+### 5. Menjalankan Pengujian (Testing)
+```bash
+npm run test
+```
+
+---
+
+## 🗺️ Roadmap Pengembangan
+
+- [x] Inisialisasi struktur proyek dan desain tema utama
+- [ ] Integrasi database katalog kafe Pontianak (alamat, jam buka, fasilitas)
+- [ ] Implementasi fitur **Random Cafe Picker** interaktif
+- [ ] Implementasi fitur **Cafe of the Day**
+- [ ] Implementasi penyimpanan **Cafe Bucketlist** (Local Storage / Sync)
+- [ ] Integrasi rute dan peta interaktif (Google Maps API / Leaflet)
+- [ ] Fitur kurasi ulasan & kontribusi data kafe baru dari komunitas
+
+---
+
+## 🤝 Berkontribusi
+
+Punya rekomendasi *coffee shop* favorit di Pontianak atau ingin membantu menyempurnakan fitur Nongki? Kontribusi sangat terbuka!
+
+1. *Fork* repositori ini.
+2. Buat *branch* fitur baru Anda:
+   ```bash
+   git checkout -b feature/nama-fitur-baru
    ```
-2. Install dependencies
-   ```sh
-   npm install
+3. Lakukan *commit* perubahan:
+   ```bash
+   git commit -m "feat: tambah fitur random picker filter"
    ```
-3. Start the local development server
-   ```sh
-   npm run dev
+4. *Push* ke *branch* Anda:
+   ```bash
+   git push origin feature/nama-fitur-baru
    ```
-4. Build for production
-   ```sh
-   npm run build
-   ```
+5. Buka **Pull Request**.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+---
 
-<!-- USAGE EXAMPLES -->
-## Usage
+## 📄 Lisensi
 
-* **Browsing & Filtering**: Use the catalog filter bar to narrow down places by district (e.g., Pontianak Selatan, Pontianak Kota) or requirements (e.g., Wi-Fi, air conditioning, late-night hours).
-* **Using Random Picker**: Click the shuffle button on the picker page to get an instant recommendation. Apply quick tags if you only want places suitable for working or places currently open.
-* **Managing Bucketlist**: Click the bookmark icon on any cafe card to add it to your personal list. Toggle the status between "Want to visit" and "Visited".
+Proyek ini dirilis di bawah lisensi [MIT](LICENSE).
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+---
 
-<!-- ROADMAP -->
-## Roadmap
-
-- [x] Base project scaffold and layout setup
-- [ ] Pontianak cafe database schema and initial dataset
-- [ ] Search and faceted filtering implementation
-- [ ] Random Cafe Picker module with filter criteria
-- [ ] Cafe of the Day rotation logic
-- [ ] Bucketlist persistence using LocalStorage
-- [ ] Interactive location mapping (Leaflet / Google Maps integration)
-- [ ] Community submission form for new cafe entries
-
-See the [open issues](https://github.com/adamtsumagami/nongki/issues) for a full list of proposed features and known issues.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- CONTRIBUTING -->
-## Contributing
-
-Contributions make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
-Don't forget to give the project a star! Thanks again!
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- LICENSE -->
-## License
-
-Distributed under the MIT License. See `LICENSE` for more information.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- CONTACT -->
-## Contact
-
-Adam Tsumagami - [@adamtsumagami](https://github.com/adamtsumagami)
-
-Project Link: [https://github.com/adamtsumagami/nongki](https://github.com/adamtsumagami/nongki)
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- ACKNOWLEDGMENTS -->
-## Acknowledgments
-
-* [othneildrew/Best-README-Template](https://github.com/othneildrew/Best-README-Template)
-* [Shields.io](https://shields.io/)
-* [Lenis](https://lenis.darkroom.engineering/)
-* [Matter.js](https://brm.io/matter-js/)
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- MARKDOWN LINKS & IMAGES -->
-<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/adamtsumagami/nongki.svg?style=for-the-badge
-[contributors-url]: https://github.com/adamtsumagami/nongki/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/adamtsumagami/nongki.svg?style=for-the-badge
-[forks-url]: https://github.com/adamtsumagami/nongki/network/members
-[stars-shield]: https://img.shields.io/github/stars/adamtsumagami/nongki.svg?style=for-the-badge
-[stars-url]: https://github.com/adamtsumagami/nongki/stargazers
-[issues-shield]: https://img.shields.io/github/issues/adamtsumagami/nongki.svg?style=for-the-badge
-[issues-url]: https://github.com/adamtsumagami/nongki/issues
-[license-shield]: https://img.shields.io/github/license/adamtsumagami/nongki.svg?style=for-the-badge
-[license-url]: https://github.com/adamtsumagami/nongki/blob/main/LICENSE
-[TypeScript]: https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white
-[TypeScript-url]: https://www.typescriptlang.org/
-[Vite]: https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white
-[Vite-url]: https://vitejs.dev/
-[Lenis]: https://img.shields.io/badge/Lenis-000000?style=for-the-badge&logo=fastly&logoColor=white
-[Lenis-url]: https://lenis.darkroom.engineering/
-[Matter.js]: https://img.shields.io/badge/Matter.js-2C3E50?style=for-the-badge&logo=javascript&logoColor=white
-[Matter-url]: https://brm.io/matter-js/
+<p align="center">
+  Dibuat dengan ☕ dan semangat anak nongkrong Pontianak.
+</p>
