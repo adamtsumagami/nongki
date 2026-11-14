@@ -20,7 +20,7 @@ describe('Nongki Platform', () => {
     await new Promise((r) => setTimeout(r, 30));
   });
 
-  it('preserves all 14 exact sections with zero external Shopify CDN assets left in HTML or JS', () => {
+  it('removes the discount popup, preloads stylesheets in head without FOUC, and keeps zero external CDN assets', () => {
     const sections = [
       'shopify-section-sections--20401917132969__header',
       'shopify-section-template--20401917558953__home_mobile',
@@ -35,11 +35,21 @@ describe('Nongki Platform', () => {
       'shopify-section-template--20401917558953__subscribe',
       'shopify-section-sections--20401917100201__footer',
       'shopify-section-cart-data',
-      'shopify-section-newsletter-popup',
     ];
     for (const id of sections) {
       expect(document.getElementById(id), `missing section ${id}`).not.toBeNull();
     }
+    expect(document.getElementById('shopify-section-newsletter-popup')).toBeNull();
+    expect(document.querySelector('[data-fvp]')).toBeNull();
+
+    const doc = new DOMParser().parseFromString(rawHtml, 'text/html');
+    const headLinks = Array.from(doc.head.querySelectorAll('link[rel="stylesheet"]')).map((l) =>
+      l.getAttribute('href'),
+    );
+    expect(headLinks).toContain('/src/styles/fonts.css');
+    expect(headLinks).toContain('/src/styles/base.css');
+    expect(headLinks).toContain('/src/styles/home-m.css');
+
     expect(rawHtml).not.toMatch(/\/\/apocalypsecoffee\.com\/cdn\/shop\//i);
     expect(themeSource).not.toMatch(/apocalypsecoffee\.com\/cdn\/shop\/.*\.(png|webp|jpg|svg)/i);
     expect(homeMSource).not.toMatch(/apocalypsecoffee\.com\/cdn\/shop\/.*\.(png|webp|jpg|svg)/i);
@@ -74,7 +84,17 @@ describe('Nongki Platform', () => {
     expect(document.querySelector('[data-cart-checkout-total]')?.textContent).toContain('12.00');
   });
 
-  it('handles invalid add payload safely and clears cart via /cart/clear.js', async () => {
+  it('does not trap mouse wheel scrolling on the bean physics canvas and returns 400 on malformed JSON payloads', async () => {
+    expect(themeSource).toContain("mouse.element.removeEventListener('wheel', mouse.mousewheel)");
+    expect(themeSource).not.toContain('initFvp(');
+
+    const badRes = await fetch('/cart/add.js', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{invalid-json',
+    });
+    expect(badRes.status).toBe(400);
+
     const res = await fetch('/cart/clear.js', { method: 'POST' });
     const data = await res.json();
     expect(data.item_count).toBe(0);

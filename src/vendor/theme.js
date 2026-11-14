@@ -2122,87 +2122,6 @@
     });
   }
 
-  /* ---- First-visit popup ---------------------------------------------------- */
-  function initFvp(root) {
-    var fvp = root.querySelector ? root.querySelector('[data-fvp]') : null;
-    if (!fvp || fvp.dataset.bound) return; fvp.dataset.bound = '1';
-    var KEY = 'apoc-welcome-pop';
-    var state; try { state = sessionStorage.getItem(KEY); } catch (e) { state = 'blocked'; }
-    var chip = document.querySelector('[data-fvp-reopen]');
-    function show() { fvp.hidden = false; if (chip) chip.hidden = true; }
-    function hide(done) {
-      fvp.hidden = true;
-      try { sessionStorage.setItem(KEY, done ? 'done' : '1'); } catch (e) {}
-      if (chip && !done) chip.hidden = false;
-    }
-    var posted = fvp.querySelector('[data-fvp-step="3"]');
-    if (posted) {
-      show(); try { sessionStorage.setItem(KEY, 'done'); } catch (e) {}
-      // personalise the confirmation from what was typed before the reload
-      try {
-        var meta = JSON.parse(sessionStorage.getItem(KEY + '-meta') || '{}');
-        var nameEl = posted.querySelector('[data-fvp-done-name]');
-        if (nameEl && meta.name) nameEl.textContent = ', ' + meta.name.split(' ')[0];
-        var blendEl = posted.querySelector('[data-fvp-done-blend]');
-        if (blendEl && meta.blend && meta.blend.toLowerCase().indexOf('mind') === -1) {
-          blendEl.textContent = '. Keep an eye out for our favorite ' + meta.blend.toLowerCase() + ' roasts, too';
-        }
-      } catch (e) {}
-    }
-    else if (!state) setTimeout(show, parseInt(fvp.dataset.delay || '5000', 10));
-    else if (state === '1' && chip) chip.hidden = false;
-
-    fvp.addEventListener('click', function (e) {
-      if (e.target === fvp || e.target.closest('[data-fvp-close]')) { hide(!!posted); return; }
-      var blend = e.target.closest('[data-fvp-blend]');
-      if (blend) {
-        var tags = fvp.querySelector('[data-fvp-tags]');
-        if (tags) tags.value = 'newsletter,first-visit-popup,blend-' + blend.dataset.fvpBlend.toLowerCase().replace(/[^a-z]+/g, '-');
-        try {
-          var m = JSON.parse(sessionStorage.getItem(KEY + '-meta') || '{}');
-          m.blend = blend.dataset.fvpBlend;
-          sessionStorage.setItem(KEY + '-meta', JSON.stringify(m));
-        } catch (e2) {}
-        fvp.querySelector('[data-fvp-step="1"]').hidden = true;
-        fvp.querySelector('[data-fvp-step="2"]').hidden = false;
-      }
-    });
-    var fvpForm = fvp.querySelector('form');
-    if (fvpForm) fvpForm.addEventListener('submit', function () {
-      try {
-        var m = JSON.parse(sessionStorage.getItem(KEY + '-meta') || '{}');
-        var n = fvp.querySelector('[data-fvp-name]');
-        if (n && n.value) m.name = n.value;
-        sessionStorage.setItem(KEY + '-meta', JSON.stringify(m));
-      } catch (e2) {}
-    });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !fvp.hidden) hide(!!posted); });
-    document.addEventListener('click', function (e) { if (e.target.closest('[data-fvp-open]')) show(); });
-    // phones: the edge tab sits centred on the hero's orange panel as the page
-    // first shows it (the visible part of the panel, measured from the top of
-    // the page), slides away while scrolling down and back on scroll up
-    if (chip) {
-      var placeTab = function () {
-        var panel = document.querySelector('.hero-m__panel');
-        if (!panel || !panel.offsetHeight) { chip.style.removeProperty('--fvp-y'); return; }
-        var r = panel.getBoundingClientRect(), top = r.top + window.scrollY, vh = window.innerHeight;
-        var a = Math.max(top, 0), b = Math.min(top + r.height, vh);
-        if (b - a < 120) { chip.style.removeProperty('--fvp-y'); return; }
-        chip.style.setProperty('--fvp-y', Math.round((a + b) / 2) + 'px');
-      };
-      placeTab();
-      window.addEventListener('load', placeTab);
-      window.addEventListener('resize', placeTab);
-      var lastY = window.scrollY;
-      window.addEventListener('scroll', function () {
-        var y = window.scrollY, dy = y - lastY;
-        if (Math.abs(dy) < 8) return;
-        chip.classList.toggle('is-away', dy > 0 && y > 40);
-        lastY = y;
-      }, { passive: true });
-    }
-  }
-
   /* ---- Smooth scroll-to buttons ---------------------------------------------- */
   function initScrollTo(root) {
     root.querySelectorAll('[data-scroll-to]').forEach(function (btn) {
@@ -3005,6 +2924,7 @@
       var mouse = M.Mouse.create(render.canvas);
       var mc = M.MouseConstraint.create(engine, { mouse: mouse, constraint: { stiffness: 0.2, render: { visible: false } } });
       M.Composite.add(engine.world, mc);
+      mouse.element.removeEventListener('wheel', mouse.mousewheel);
       mouse.element.removeEventListener('mousewheel', mouse.mousewheel);
       mouse.element.removeEventListener('DOMMouseScroll', mouse.mousewheel);
       mouse.element.removeEventListener('touchstart', mouse.mousedown);
@@ -3020,14 +2940,16 @@
          section so it works over the copy too; a still cursor does nothing. */
       var sec = host.closest('section') || host.parentElement;
       var ptr = { x: 0, y: 0, vx: 0, vy: 0, on: false };
-      sec.addEventListener('pointermove', function (e) {
+      function onPtrMove(e) {
         if (e.pointerType === 'touch') return;
         var r = host.getBoundingClientRect();
         var x = e.clientX - r.left, y = e.clientY - r.top;
         if (ptr.on) { ptr.vx += x - ptr.x; ptr.vy += y - ptr.y; }
         ptr.x = x; ptr.y = y; ptr.on = true;
-      }, { passive: true });
-      sec.addEventListener('pointerleave', function () { ptr.on = false; ptr.vx = ptr.vy = 0; });
+      }
+      function onPtrLeave() { ptr.on = false; ptr.vx = ptr.vy = 0; }
+      sec.addEventListener('pointermove', onPtrMove, { passive: true });
+      sec.addEventListener('pointerleave', onPtrLeave);
       var reach = size * 1.6;
       M.Events.on(engine, 'beforeUpdate', function () {
         var sp = Math.hypot(ptr.vx, ptr.vy);
@@ -3063,6 +2985,8 @@
       }
       host.__matterCleanup = function () {
         if (host.__matterVis) { host.__matterVis.disconnect(); host.__matterVis = null; }
+        sec.removeEventListener('pointermove', onPtrMove);
+        sec.removeEventListener('pointerleave', onPtrLeave);
         clearInterval(timer);
         M.Render.stop(render); M.Runner.stop(runner); M.Engine.clear(engine);
         if (render.canvas && render.canvas.parentNode) render.canvas.parentNode.removeChild(render.canvas);
@@ -3242,7 +3166,7 @@
     initMenu(root); initNavTuck(); initOneLineTitles(root); initCart(root); initAddForms(root); initCards(root);
     initPops(); initScrollRows(root); initDragRows(root); initSnapGuard(root); initMarquee(root); initUfo(root);
     initStickySteps(root); initTimeline(root); initQuiz(root); initProduct(root);
-    initTabs(root); initRoastFilter(root); initBundleBuilder(root); initBundleHero(root); initBigBang(root); initFvp(root); initScrollTo(root); initBeanFields(root);
+    initTabs(root); initRoastFilter(root); initBundleBuilder(root); initBundleHero(root); initBigBang(root); initScrollTo(root); initBeanFields(root);
     initSplitReveal(root); initReviews(root); initPdpNav(root); initHeroTrios(root); initHeroSusan(root); initBeanPhysics(root); initSweeps(root); initEdgeFades(root);
   }
 
@@ -3256,7 +3180,7 @@
   function initPress() {
     if (window.__acPress || !Element.prototype.animate) return; window.__acPress = 1;
     if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    var SEL = 'button, [role="button"], input[type="submit"], input[type="button"], select, .button-039, .icon-btn, .arrow-btn, .hm-arrow, .fvp-badge, .underlay-nav__link-large';
+    var SEL = 'button, [role="button"], input[type="submit"], input[type="button"], select, .button-039, .icon-btn, .arrow-btn, .hm-arrow, .underlay-nav__link-large';
     var held = null;
     function target(el) {
       el = el && el.closest ? el.closest(SEL) : null;

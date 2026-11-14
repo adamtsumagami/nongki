@@ -818,10 +818,6 @@ body.cart-pending .cart-drawer__foot > .cart-drawer__total-row:first-child::afte
   .cart-drawer.is-cleared .cart-drawer__empty > * { animation:none; }
 }
 
-/* the first-order "Save 10%" chip (newsletter-popup, z-index 9000) would
-   float over the open cart/menu — hide it while either drawer is open */
-body:is([data-cart-status="open"], [data-menu-status="open"]) .fvp-chip { display:none !important; }
-
 /* phone sizes for the sheet — placed after every cart component rule so the
    same-specificity overrides actually win */
 @media (max-width:767px) {

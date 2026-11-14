@@ -150,7 +150,10 @@ class LocalCartStore {
   constructor() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) this.lines = JSON.parse(saved);
+      if (saved) {
+        const parsed: unknown = JSON.parse(saved);
+        if (Array.isArray(parsed)) this.lines = parsed as CartLine[];
+      }
     } catch {
       this.lines = [];
     }
@@ -288,25 +291,39 @@ export function installLocalShopifyShim() {
       return nativeFetch(input, init);
     }
 
-    const jsonRes = (body: unknown) =>
-      new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    const jsonRes = (body: unknown, status = 200) =>
+      new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+
+    const parseJsonBody = (): { ok: true; data: Record<string, unknown> } | { ok: false } => {
+      if (!init?.body) return { ok: true, data: {} };
+      try {
+        const parsed: unknown = JSON.parse(String(init.body));
+        return { ok: true, data: (parsed && typeof parsed === 'object' ? parsed : {}) as Record<string, unknown> };
+      } catch {
+        return { ok: false };
+      }
+    };
 
     if (pathname === '/cart.js') {
       return jsonRes(store.toJSON());
     }
     if (pathname === '/cart/add.js') {
-      const raw = init?.body ? JSON.parse(String(init.body)) : {};
-      const items: RawLineInput[] = Array.isArray(raw.items) ? raw.items : [raw];
+      const body = parseJsonBody();
+      if (!body.ok) return jsonRes({ status: 400, description: 'Invalid JSON payload' }, 400);
+      const raw = body.data;
+      const items: RawLineInput[] = Array.isArray(raw.items) ? (raw.items as RawLineInput[]) : [raw as unknown as RawLineInput];
       const cart = store.add(items);
       return jsonRes({ items: cart.items });
     }
     if (pathname === '/cart/change.js') {
-      const raw = init?.body ? JSON.parse(String(init.body)) : {};
-      return jsonRes(store.change(raw));
+      const body = parseJsonBody();
+      if (!body.ok) return jsonRes({ status: 400, description: 'Invalid JSON payload' }, 400);
+      return jsonRes(store.change(body.data as { id?: string; line?: number; quantity: number }));
     }
     if (pathname === '/cart/update.js') {
-      const raw = init?.body ? JSON.parse(String(init.body)) : {};
-      return jsonRes(store.update(raw.updates || {}));
+      const body = parseJsonBody();
+      if (!body.ok) return jsonRes({ status: 400, description: 'Invalid JSON payload' }, 400);
+      return jsonRes(store.update((body.data.updates as Record<string, number>) || {}));
     }
     if (pathname === '/cart/clear.js') {
       return jsonRes(store.clear());
