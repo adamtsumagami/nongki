@@ -49,7 +49,7 @@ npm run preview # preview production build
 
 ## Data Note
 
-The cafe listings are illustrative seed data covering Jakarta, Bandung, Yogyakarta, Surabaya, Medan, Makassar, Denpasar, and Pontianak. Verify before using as real-world info.
+The cafe listings are dummy data for development and demo purposes (names, addresses, hours, and links are not real businesses). They will be replaced with curated, verified listings later.
 
 ## License
 

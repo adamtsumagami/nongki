@@ -184,8 +184,8 @@ describe('pemilih acak', () => {
 
 describe('utilitas tampilan', () => {
   it('membuat inisial dari nama kafe', () => {
-    expect(getInitials('Warkop Asiang')).toBe('WA');
+    expect(getInitials('Warkop Senja Pagi')).toBe('WS');
     expect(getInitials('Canopy')).toBe('CA');
-    expect(getInitials('Dua Cerita Coffee & Space')).toBe('DC');
+    expect(getInitials('Kopi Bersama Kita')).toBe('KB');
   });
 });

@@ -2,8 +2,8 @@
  * Katalog kafe dan warung kopi Nongki untuk seluruh Indonesia.
  *
  * Catatan data:
- * - Data awal ini bersifat ilustratif dan dipakai untuk mengisi prototipe.
- *   Verifikasi ulang alamat, jam buka, dan fasilitas sebelum dipublikasikan.
+ * - Data dummy untuk pengembangan dan demo. Nama, alamat, jam buka, fasilitas,
+ *   dan tautan bukan milik usaha nyata; akan diganti data terverifikasi nanti.
  * - `opensAt` / `closesAt` memakai format 24 jam "HH:MM" menurut zona waktu
  *   kota masing-masing (WIB, WITA, atau WIT).
  * - `open24` menandai tempat yang buka non-stop.
@@ -119,7 +119,7 @@ export const CAFES_DATA: Cafe[] = [
   /* ---------------------------------------------------------------- */
   {
     id: 'asiang',
-    name: 'Warkop Asiang',
+    name: 'Warkop Senja Pagi',
     tagline: 'Kopi saring legendaris tanpa baju sejak 1958',
     city: 'Pontianak',
     area: 'Gajah Mada',
@@ -137,12 +137,12 @@ export const CAFES_DATA: Cafe[] = [
     description:
       'Ikon warung kopi legendaris Pontianak yang tersohor di nusantara. Disajikan langsung oleh Koh Asiang dengan gaya atraktif, meracik kopi hitam pekat dan kopi susu berbuih halus khas Pontianak.',
     menuHighlights: ['Kopi hitam saring', 'Kopi susu', 'Telur setengah matang', 'Roti bakar'],
-    mapsUrl: 'https://maps.google.com/?q=Warkop+Asiang+Pontianak',
+    mapsUrl: 'https://www.google.com/maps/search/kafe+pontianak',
     accentColor: '#c9281e',
   },
   {
     id: 'aming-podomoro',
-    name: 'Aming Coffee Podomoro',
+    name: 'Kedai Kopi Beringin',
     tagline: 'Pelopor warung kopi modern Pontianak sejak 1970',
     city: 'Pontianak',
     area: 'Podomoro',
@@ -160,12 +160,12 @@ export const CAFES_DATA: Cafe[] = [
     description:
       'Pelebaran modern dari warung kopi legendaris Jl. H. Abbas. Menyediakan bubuk kopi robusta racikan otentik Aming yang harum pekat, ditemani roti srikaya panggang dan pisang goreng krispi.',
     menuHighlights: ['Kopi susu Aming', 'Roti srikaya', 'Pisang goreng', 'Kopi robusta'],
-    mapsUrl: 'https://maps.google.com/?q=Aming+Coffee+Podomoro+Pontianak',
+    mapsUrl: 'https://www.google.com/maps/search/kafe+pontianak',
     accentColor: '#3aaae0',
   },
   {
     id: 'kopi-kala',
-    name: 'Kopi Kala Hijas',
+    name: 'Kopi Mayang',
     tagline: 'Suasana estetik dan nyaman di koridor Hijas',
     city: 'Pontianak',
     area: 'Hijas',
@@ -183,12 +183,12 @@ export const CAFES_DATA: Cafe[] = [
     description:
       'Salah satu pelopor kedai kopi gelombang ketiga di kawasan kuliner Jl. Hijas. Interior industrial minimalis dengan bar espresso modern, Wi-Fi kencang, dan aneka kreasi kopi serta kudapan.',
     menuHighlights: ['Es kopi susu', 'Seduh manual', 'Croissant', 'Latte matcha'],
-    mapsUrl: 'https://maps.google.com/?q=Kopi+Kala+Hijas+Pontianak',
+    mapsUrl: 'https://www.google.com/maps/search/kafe+pontianak',
     accentColor: '#a89018',
   },
   {
     id: 'canopy-center',
-    name: 'Canopy Center',
+    name: 'Kafe Tepian Kapuas',
     tagline: 'Ruang komunitas kreatif dengan taman terbuka',
     city: 'Pontianak',
     area: 'Purnama',
@@ -206,12 +206,12 @@ export const CAFES_DATA: Cafe[] = [
     description:
       'Titik temu komunitas kreatif Pontianak. Dikelilingi pepohonan rindang dan arsitektur semi-terbuka yang sejuk, tersedia meja panjang untuk bekerja dan menu kopi yang menyegarkan.',
     menuHighlights: ['Kopi susu gula aren', 'Americano', 'Kentang goreng', 'Nasi ayam'],
-    mapsUrl: 'https://maps.google.com/?q=Canopy+Center+Pontianak',
+    mapsUrl: 'https://www.google.com/maps/search/kafe+pontianak',
     accentColor: '#2a8a4a',
   },
   {
     id: 'cw-coffee-reformasi',
-    name: 'CW Coffee Reformasi',
+    name: 'Kedai Kopi Bintang Timur',
     tagline: 'Markas kerja 24 jam andalan mahasiswa dan pekerja',
     city: 'Pontianak',
     area: 'Reformasi',
@@ -230,12 +230,12 @@ export const CAFES_DATA: Cafe[] = [
     description:
       'Jaringan kedai kopi lokal Pontianak yang buka 24 jam dengan colokan di hampir tiap meja, kursi ergonomis, dan koneksi internet stabil. Pilihan utama saat tenggat mengejar.',
     menuHighlights: ['Kopi susu CW', 'Americano', 'Sayap ayam', 'Mi instan'],
-    mapsUrl: 'https://maps.google.com/?q=CW+Coffee+Reformasi+Pontianak',
+    mapsUrl: 'https://www.google.com/maps/search/kafe+pontianak',
     accentColor: '#6a4d9c',
   },
   {
     id: 'dua-cerita',
-    name: 'Dua Cerita Coffee & Space',
+    name: 'Kopi Bersama Kita',
     tagline: 'Tempat bercerita dan ngopi dengan suasana hangat',
     city: 'Pontianak',
     area: 'Reformasi',
@@ -252,12 +252,12 @@ export const CAFES_DATA: Cafe[] = [
     description:
       'Kedai kopi dengan atmosfer hangat yang sangat dekat dengan kawasan kampus Untan. Tempat favorit mahasiswa untuk bertukar cerita sambil menikmati seduh manual dan kopi susu aren terjangkau.',
     menuHighlights: ['Kopi susu aren', 'V60', 'Pisang goreng keju', 'Teh tarik'],
-    mapsUrl: 'https://maps.google.com/?q=Dua+Cerita+Coffee+Pontianak',
+    mapsUrl: 'https://www.google.com/maps/search/kafe+pontianak',
     accentColor: '#e07a30',
   },
   {
     id: 'warkop-win-sinar-pagi',
-    name: 'Warkop Win Sinar Pagi',
+    name: 'Warkop Langit Pagi',
     tagline: 'Kopi susu mantap dan roti srikaya legendaris',
     city: 'Pontianak',
     area: 'Gajah Mada',
@@ -274,12 +274,12 @@ export const CAFES_DATA: Cafe[] = [
     description:
       'Warung kopi klasik di urat nadi Jl. Gajah Mada. Selalu ramai pada pagi hari oleh obrolan warga lokal, ditemani secangkir kopi hitam manis kental dan roti kukus selai srikaya buatan sendiri.',
     menuHighlights: ['Kopi saring', 'Roti kukus srikaya', 'Kopi susu', 'Pisang goreng'],
-    mapsUrl: 'https://maps.google.com/?q=Warkop+Win+Sinar+Pagi+Pontianak',
+    mapsUrl: 'https://www.google.com/maps/search/kafe+pontianak',
     accentColor: '#9a9aa0',
   },
   {
     id: 'teduh-coffee',
-    name: 'Teduh Coffee & Space',
+    name: 'Kedai Kopi Timur Jaya',
     tagline: 'Ruang hijau rindang di tengah kota',
     city: 'Pontianak',
     area: 'Kota Baru',
@@ -296,7 +296,7 @@ export const CAFES_DATA: Cafe[] = [
     description:
       'Sesuai namanya, mengusung konsep kafe taman terbuka dengan pepohonan rindang dan angin sepoi-sepoi. Pilihan tepat untuk melepas penat setelah seharian beraktivitas.',
     menuHighlights: ['Kopi susu', 'Kopi seduh dingin', 'Pasta', 'Kue'],
-    mapsUrl: 'https://maps.google.com/?q=Teduh+Coffee+Pontianak',
+    mapsUrl: 'https://www.google.com/maps/search/kafe+pontianak',
     accentColor: '#2a8a4a',
   },
 
@@ -305,7 +305,7 @@ export const CAFES_DATA: Cafe[] = [
   /* ---------------------------------------------------------------- */
   {
     id: 'anomali-kemang',
-    name: 'Anomali Coffee Kemang',
+    name: 'Kafe Kemang Nusantara',
     tagline: 'Kopi spesialti Indonesia dengan suasana hangat',
     city: 'Jakarta',
     area: 'Kemang',
@@ -323,12 +323,12 @@ export const CAFES_DATA: Cafe[] = [
     description:
       'Kedai kopi spesialti yang mengangkat biji kopi dari berbagai daerah di Indonesia. Ruangannya lapang, nyaman untuk bekerja, dan menunya menjelaskan asal biji dengan jelas.',
     menuHighlights: ['Es kopi susu', 'Seduh manual', 'Croissant', 'Kopi single origin'],
-    mapsUrl: 'https://maps.google.com/?q=Anomali+Coffee+Kemang',
+    mapsUrl: 'https://www.google.com/maps/search/kafe+jakarta',
     accentColor: '#3aaae0',
   },
   {
     id: 'giyanti-menteng',
-    name: 'Giyanti Coffee Roastery',
+    name: 'Kedai Kopi Menteng Gading',
     tagline: 'Rumah sangrai kopi di jantung Menteng',
     city: 'Jakarta',
     area: 'Menteng',
@@ -345,7 +345,7 @@ export const CAFES_DATA: Cafe[] = [
     description:
       'Kedai sekaligus rumah sangrai kopi yang tenang di Menteng. Cocok untuk mencicipi racikan biji pilihan, belajar soal sangrai, atau sekadar membaca buku di sore hari.',
     menuHighlights: ['Seduh manual', 'Espresso', 'Kopi susu', 'Kue mentega'],
-    mapsUrl: 'https://maps.google.com/?q=Giyanti+Coffee+Roastery+Menteng',
+    mapsUrl: 'https://www.google.com/maps/search/kafe+jakarta',
     accentColor: '#2a8a4a',
   },
 
@@ -354,7 +354,7 @@ export const CAFES_DATA: Cafe[] = [
   /* ---------------------------------------------------------------- */
   {
     id: 'kopi-toko-djawa',
-    name: 'Kopi Toko Djawa',
+    name: 'Kedai Kopi Dago Asri',
     tagline: 'Kopi susu klasik di koridor Braga',
     city: 'Bandung',
     area: 'Braga',
@@ -372,12 +372,12 @@ export const CAFES_DATA: Cafe[] = [
     description:
       'Kedai kopi dengan nuansa klasik di kawasan Braga. Menyajikan kopi susu dan camilan yang akrab di lidah, dengan interior kayu yang hangat dan lokasi yang mudah dijangkau.',
     menuHighlights: ['Kopi susu', 'Es kopi susu', 'Roti bakar', 'Pisang goreng'],
-    mapsUrl: 'https://maps.google.com/?q=Kopi+Toko+Djawa+Braga+Bandung',
+    mapsUrl: 'https://www.google.com/maps/search/kafe+bandung',
     accentColor: '#a89018',
   },
   {
     id: 'kopi-cimol-dago',
-    name: 'Kopi Cimol Dago',
+    name: 'Kafe Cimol Jaya',
     tagline: 'Ngopi santai ditemani camilan khas',
     city: 'Bandung',
     area: 'Dago',
@@ -394,7 +394,7 @@ export const CAFES_DATA: Cafe[] = [
     description:
       'Tempat ngopi sederhana di Dago dengan area terbuka dan menu camilan yang ramah kantong. Sering jadi titik kumpul mahasiswa dan warga sekitar pada malam hari.',
     menuHighlights: ['Kopi susu', 'Cimol', 'Teh manis', 'Pisang goreng'],
-    mapsUrl: 'https://maps.google.com/?q=Kopi+Cimol+Dago+Bandung',
+    mapsUrl: 'https://www.google.com/maps/search/kafe+bandung',
     accentColor: '#e07a30',
   },
 
@@ -403,7 +403,7 @@ export const CAFES_DATA: Cafe[] = [
   /* ---------------------------------------------------------------- */
   {
     id: 'kopi-klotok',
-    name: 'Kopi Klotok',
+    name: 'Kedai Kopi Tugu Aman',
     tagline: 'Kopi kampung dengan pemandangan hijau',
     city: 'Yogyakarta',
     area: 'Kaliurang',
@@ -421,12 +421,12 @@ export const CAFES_DATA: Cafe[] = [
     description:
       'Warung kopi di lereng Kaliurang yang dikenal dengan suasana kampung dan pemandangan hijau. Menu kopi dan gorengan sederhana disajikan dengan pemandangan yang menyegarkan.',
     menuHighlights: ['Kopi klotok', 'Pisang goreng', 'Tahu tempe', 'Teh manis'],
-    mapsUrl: 'https://maps.google.com/?q=Kopi+Klotok+Kaliurang',
+    mapsUrl: 'https://www.google.com/maps/search/kafe+yogyakarta',
     accentColor: '#2a8a4a',
   },
   {
     id: 'kopi-joss-lik-man',
-    name: 'Kopi Joss Lik Man',
+    name: 'Warkop Joss Pagi',
     tagline: 'Kopi arang legendaris khas Yogyakarta',
     city: 'Yogyakarta',
     area: 'Gedongkiwo',
@@ -443,7 +443,7 @@ export const CAFES_DATA: Cafe[] = [
     description:
       'Warung kopi malam yang terkenal dengan kopi joss, yaitu kopi panas yang diberi arang membara. Rasanya unik, suasananya ramai, dan cocok untuk ngobrol sampai larut.',
     menuHighlights: ['Kopi joss', 'Kopi susu', 'Gorengan', 'Indomie'],
-    mapsUrl: 'https://maps.google.com/?q=Kopi+Joss+Lik+Man+Yogyakarta',
+    mapsUrl: 'https://www.google.com/maps/search/kafe+yogyakarta',
     accentColor: '#c9281e',
   },
 
@@ -452,7 +452,7 @@ export const CAFES_DATA: Cafe[] = [
   /* ---------------------------------------------------------------- */
   {
     id: 'kopi-tugu-darmo',
-    name: 'Kopi Tugu Darmo',
+    name: 'Kedai Kopi Darmo Asri',
     tagline: 'Kopi lokal dengan ruang kerja yang nyaman',
     city: 'Surabaya',
     area: 'Darmo',
@@ -469,12 +469,12 @@ export const CAFES_DATA: Cafe[] = [
     description:
       'Kedai kopi dengan ruang kerja yang tertata dan colokan di banyak meja. Menyajikan kopi susu serta menu pendamping yang cocok untuk sesi kerja panjang.',
     menuHighlights: ['Kopi susu', 'Americano', 'Roti bakar', 'Nasi goreng'],
-    mapsUrl: 'https://maps.google.com/?q=Kopi+Tugu+Darmo+Surabaya',
+    mapsUrl: 'https://www.google.com/maps/search/kafe+surabaya',
     accentColor: '#3aaae0',
   },
   {
     id: 'zangrandi-surabaya',
-    name: 'Zangrandi Coffee & Ice Cream',
+    name: 'Kafe Tugu Pahlawan',
     tagline: 'Kedai es krim dan kopi yang sudah lama berdiri',
     city: 'Surabaya',
     area: 'Genteng',
@@ -491,7 +491,7 @@ export const CAFES_DATA: Cafe[] = [
     description:
       'Tempat legendaris di Surabaya yang menyajikan es krim dan kopi dengan suasana lama yang tetap terjaga. Cocok untuk berhenti sejenak saat berjalan-jalan di pusat kota.',
     menuHighlights: ['Es krim', 'Kopi susu', 'Roti bakar', 'Es campur'],
-    mapsUrl: 'https://maps.google.com/?q=Zangrandi+Surabaya',
+    mapsUrl: 'https://www.google.com/maps/search/kafe+surabaya',
     accentColor: '#9a9aa0',
   },
 
@@ -500,7 +500,7 @@ export const CAFES_DATA: Cafe[] = [
   /* ---------------------------------------------------------------- */
   {
     id: 'warkop-apek-kesawan',
-    name: 'Warung Kopi Apek',
+    name: 'Kedai Kopi Kesawan',
     tagline: 'Warung kopi legendaris di Kesawan',
     city: 'Medan',
     area: 'Kesawan',
@@ -518,12 +518,12 @@ export const CAFES_DATA: Cafe[] = [
     description:
       'Warung kopi tua di kawasan Kesawan yang tetap ramai hingga kini. Kopi susunya kental dan manis, disajikan bersama roti bakar dan obrolan warga kota.',
     menuHighlights: ['Kopi susu', 'Roti bakar', 'Kopi hitam', 'Telur setengah matang'],
-    mapsUrl: 'https://maps.google.com/?q=Warung+Kopi+Apek+Kesawan+Medan',
+    mapsUrl: 'https://www.google.com/maps/search/kafe+medan',
     accentColor: '#c9281e',
   },
   {
     id: 'kopi-kito-medan',
-    name: 'Kopi Kito',
+    name: 'Kedai Kopi Setia',
     tagline: 'Kopi susu kekinian di pusat kota',
     city: 'Medan',
     area: 'Merdeka Walk',
@@ -540,7 +540,7 @@ export const CAFES_DATA: Cafe[] = [
     description:
       'Kedai kopi modern di kawasan Merdeka Walk dengan ruang ber-AC dan area duduk yang nyaman. Menyajikan kopi susu serta minuman kekinian untuk menemani malam di kota.',
     menuHighlights: ['Es kopi susu', 'Latte', 'Kentang goreng', 'Donat'],
-    mapsUrl: 'https://maps.google.com/?q=Kopi+Kito+Medan',
+    mapsUrl: 'https://www.google.com/maps/search/kafe+medan',
     accentColor: '#6a4d9c',
   },
 
@@ -549,7 +549,7 @@ export const CAFES_DATA: Cafe[] = [
   /* ---------------------------------------------------------------- */
   {
     id: 'kopi-daeng-losari',
-    name: 'Kopi Daeng',
+    name: 'Kedai Kopi Losari',
     tagline: 'Ngopi santai dekat pantai Losari',
     city: 'Makassar',
     area: 'Losari',
@@ -566,12 +566,12 @@ export const CAFES_DATA: Cafe[] = [
     description:
       'Kedai kopi dekat kawasan Losari dengan ruang duduk yang nyaman. Setelah ngopi, kamu bisa langsung berjalan kaki menikmati angin laut dan matahari terbenam.',
     menuHighlights: ['Kopi susu', 'Es kopi susu', 'Pisang goreng', 'Nasi goreng'],
-    mapsUrl: 'https://maps.google.com/?q=Kopi+Daeng+Losari+Makassar',
+    mapsUrl: 'https://www.google.com/maps/search/kafe+makassar',
     accentColor: '#3aaab8',
   },
   {
     id: 'warkop-phinisi',
-    name: 'Warung Kopi Phinisi',
+    name: 'Warkop Ombak Pagi',
     tagline: 'Warung kopi terbuka menghadap laut',
     city: 'Makassar',
     area: 'Pantai Losari',
@@ -588,7 +588,7 @@ export const CAFES_DATA: Cafe[] = [
     description:
       'Warung kopi dengan area terbuka yang menghadap ke arah laut. Tempat yang ramai pada malam hari, cocok untuk ngobrol santai sambil menikmati suasana pesisir.',
     menuHighlights: ['Kopi susu', 'Kopi hitam', 'Pisang goreng', 'Jagung bakar'],
-    mapsUrl: 'https://maps.google.com/?q=Warung+Kopi+Phinisi+Makassar',
+    mapsUrl: 'https://www.google.com/maps/search/kafe+makassar',
     accentColor: '#e07a30',
   },
 
@@ -597,7 +597,7 @@ export const CAFES_DATA: Cafe[] = [
   /* ---------------------------------------------------------------- */
   {
     id: 'bali-buda-renon',
-    name: 'Bali Buda Renon',
+    name: 'Kafe Renon Asri',
     tagline: 'Kafe sehat dengan taman yang asri',
     city: 'Denpasar',
     area: 'Renon',
@@ -615,12 +615,12 @@ export const CAFES_DATA: Cafe[] = [
     description:
       'Kafe dengan taman hijau dan menu yang menekankan bahan segar. Suasananya tenang, ramah untuk hewan peliharaan, dan cocok untuk sarapan atau kerja ringan.',
     menuHighlights: ['Kopi Bali', 'Jus buah', 'Roti gandum', 'Salad'],
-    mapsUrl: 'https://maps.google.com/?q=Bali+Buda+Renon+Denpasar',
+    mapsUrl: 'https://www.google.com/maps/search/kafe+denpasar',
     accentColor: '#2a8a4a',
   },
   {
     id: 'kopi-kintamani-renon',
-    name: 'Kopi Kintamani Renon',
+    name: 'Kedai Kopi Kintamani Pagi',
     tagline: 'Kopi Bali dengan suasana tropis',
     city: 'Denpasar',
     area: 'Renon',
@@ -637,7 +637,7 @@ export const CAFES_DATA: Cafe[] = [
     description:
       'Kedai kopi yang mengangkat biji kopi Kintamani dengan area terbuka dan tanaman hijau. Tempat yang nyaman untuk berhenti sejenak di tengah kesibukan kota.',
     menuHighlights: ['Kopi Kintamani', 'Es kopi susu', 'Pisang goreng', 'Kue kelapa'],
-    mapsUrl: 'https://maps.google.com/?q=Kopi+Kintamani+Renon+Denpasar',
+    mapsUrl: 'https://www.google.com/maps/search/kafe+denpasar',
     accentColor: '#a89018',
   },
 ];
