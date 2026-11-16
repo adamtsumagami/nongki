@@ -1,55 +1,49 @@
-# Nongki — Kafe Directory for Indonesia
+# Nongki
 
-Nongki is a web app for discovering cafes and coffee shops across Indonesia. It helps users pick a place to hang out, get work done, or grab coffee based on city, vibe, facilities, and opening status.
+A web app for finding a cafe in Indonesia. Pick a city, filter by what you actually need (open now, seats, wi-fi), save a few to visit, or hit the random-pick button when you can't decide.
 
-## Features
+Status: early. The cafe data is placeholder, not real.
 
-- **National cafe directory** — browse listings with area, vibe, facilities, price range, and maps link.
-- **Search & filters** — filter by city, opening status, and needs (e.g. work-friendly spots).
-- **Random pick** — get a random cafe recommendation, optionally limited to currently open places.
-- **Cafe of the day** — a daily recommendation from the directory.
-- **Bucket list** — save favorite cafes in the browser for later.
+## What it does
 
-## Tech Stack
+- Lists cafes in eight cities (Jakarta, Bandung, Yogyakarta, Surabaya, Medan, Makassar, Denpasar, Pontianak) with area, hours, price range and a Maps link.
+- Search and filters: city, open now, facilities (wi-fi, outlets, smoking area, musala).
+- Cafe of the day on the homepage.
+- Random pick button, with an "only the ones that are open" option.
+- Save cafes to a list, stored in your browser. No account.
 
-- [Vite](https://vitejs.dev/) — bundler and dev server
-- [TypeScript](https://www.typescriptlang.org/) — language
-- CSS — styling
-- [Lenis](https://lenis.darkroom.engineering/) — smooth scrolling
-- [Matter.js](https://brm.io/matter-js/) — 2D physics animation
-- [Vitest](https://vitest.dev/) — testing
+## Stack
 
-## Getting Started
+Vite, TypeScript, plain CSS, Lenis (smooth scrolling), Matter.js (physics animation), Vitest. No backend; the saved list lives in `localStorage`.
 
-Requires Node.js 18+ and npm.
+## Run it
+
+Node 18+.
 
 ```bash
-npm install   # install dependencies
-npm run dev   # dev server (usually http://localhost:5173)
-npm run test  # run tests
-npm run build # production build to dist/
-npm run preview # preview production build
+npm install
+npm run dev
 ```
 
-## Project Structure
+Open http://localhost:5173. Also `npm run test`, `npm run build`, `npm run preview`.
+
+## Layout
 
 ```text
-.
-├── public/          # Static assets
-├── src/
-│   ├── data/        # Cafe data model
-│   ├── lib/         # Filtering and helpers
-│   ├── runtime/     # UI bootstrap and behavior
-│   ├── styles/      # CSS
-│   ├── vendor/      # Supporting scripts
-│   └── test/        # Test setup
-├── index.html       # Main HTML markup
-└── vite.config.ts   # Vite config
+public/            static assets
+src/
+  data/            cafe data model
+  lib/             filtering, hours, timezone-aware open/closed helpers
+  runtime/         UI behavior (catalog, picker, bucketlist)
+  styles/          CSS
+  vendor/          third-party scripts
+index.html         the page
+vite.config.ts     build config
 ```
 
-## Data Note
+## Data
 
-The cafe listings are dummy data for development and demo purposes (names, addresses, hours, and links are not real businesses). They will be replaced with curated, verified listings later.
+Every cafe in the repo is made up. Names, addresses, hours and links are invented so the UI has something to show. Real, verified listings have not been added yet. Do not present this as a working directory.
 
 ## License
 
