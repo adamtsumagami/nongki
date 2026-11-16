@@ -8,15 +8,18 @@ Nongki is an Indonesia-wide web directory and recommendation platform for cafes 
 
 **Not** a coffee e-commerce site, and not Pontianak-only anymore. The user-facing UI copy is **Indonesian only**. Code identifiers, comments, README, and commit messages are English.
 
+Note: `package.json` `description` still says "Pontianak" — stale. Trust this file and the README (Indonesia-wide), not that string.
+
 ## Tech stack
 
 - Vite 6 + TypeScript 5, jsdom + Vitest 3 for tests
-- Plain HTML (`index.html`, ~295 KB — read sections on demand, don't dump it whole)
+- Plain HTML (`index.html`, ~295 KB / ~1500 lines — read sections on demand, don't dump it whole)
 - Plain CSS (`src/styles/base.css`, `cafe-ui.css`, `home-m.css`, `fonts.css`)
-- JS islands in `src/vendor/theme.js` (initXxx functions, no framework)
-- [Lenis](https://lenis.darkroom.engineering/) for smooth scrolling (initialized in `initSmoothScroll()` — it has no feature flag; it simply runs on desktop pointers)
+- JS islands in `src/vendor/theme.js` and `src/vendor/home-m.js` (initXxx functions, no framework)
+- [Lenis](https://lenis.darkroom.engineering/) for smooth scrolling (initialized in `initSmoothScroll()` — no feature flag; simply runs on desktop pointers)
 - [Matter.js](https://brm.io/matter-js/) for bean-falling animation
-- No Shopify, no backend, no server-side rendering. State (bucketlist) lives in `localStorage`.
+- No Shopify, no backend, no SSR. State (bucketlist) lives in `localStorage`.
+- No lint, format, or CI config. `npm run build` (`tsc -b && vite build`) is the only typecheck gate; `npm run test` is the only test gate.
 
 ## Commands
 
@@ -26,6 +29,11 @@ npm run dev      # dev server (usually http://localhost:5173)
 npm run test     # vitest run — all tests must pass before committing
 npm run build    # tsc -b && vite build -> dist/
 npm run preview  # preview the production build
+```
+
+```bash
+npx vitest run src/lib/cafes.test.ts   # single test file
+npx vitest run -t "<name>"             # single test by name
 ```
 
 ## Repository layout
@@ -59,8 +67,8 @@ src/main.ts, src/test/setup.ts
 
 - Lenis smooth scroll works; `data-lenis-prevent` on drawers opts out.
 - Cart/account/checkout/buying flow fully removed.
-- All imagery is abstract/SVG (city tiles in `public/assets/city-*.svg`). No Apocalypse Coffee assets remain.
-- Seed data: 22 fictional cafes across 8 cities (Jakarta, Bandung, Yogyakarta, Surabaya, Medan, Makassar, Denpasar, Pontianak), including WIB/WITA timezone handling.
+- Seed data: 22 fictional cafes across 8 cities (Jakarta, Bandung, Yogyakarta, Surabaya, Medan, Makassar, Denpasar, Pontianak — Pontianak has 8, the rest 2 each), including WIB/WITA timezone handling.
+- Unreferenced Apocalypse Coffee product images (`public/assets/acr-product_img-*.png`) still sit in `public/assets/` and are copied into `dist/` by Vite. Nothing references them; they are leftovers, not assets in use.
 - Known rough edges (accepted, not bugs): very long mobile catalog list; seed data is unverified; legacy sections still hidden on mobile.
 
 ## Testing & verification
