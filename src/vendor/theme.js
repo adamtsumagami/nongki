@@ -685,6 +685,97 @@
     });
   }
 
+
+  /* ---- Manifesto: kata-kata menyala mengikuti scroll ------------------ */
+  /* ---- Kicker chips: orange brush stroke draws in on scroll ---------------- */
+  function initLblDraw(root) {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      [].forEach.call(root.querySelectorAll('.lbl'), function (el) { el.classList.add('is-drawn'); });
+      return;
+    }
+    if (!('IntersectionObserver' in window)) {
+      [].forEach.call(root.querySelectorAll('.lbl'), function (el) { el.classList.add('is-drawn'); });
+      return;
+    }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { en.target.classList.add('is-drawn'); io.unobserve(en.target); }
+      });
+    }, { rootMargin: '0px 0px -10% 0px' });
+    [].forEach.call(root.querySelectorAll('.lbl'), function (el) {
+      if (el.dataset.lblBound) return;
+      el.dataset.lblBound = '1';
+      io.observe(el);
+    });
+  }
+
+  function initMani(root) {
+    if (!root.querySelector) return;
+    if (window.matchMedia('(max-width: 767px)').matches) return; // ditangani home-m.js
+    var mani = root.querySelector('.mani[data-mani="desktop"]');
+    if (!mani) return;
+    var words = [].slice.call(mani.querySelectorAll('.w'));
+    if (!words.length) return;
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) {
+      words.forEach(function (w) { w.style.opacity = 1; });
+      [].forEach.call(mani.querySelectorAll('.mk'), function (m) { m.classList.add('is-on'); });
+      return;
+    }
+    var maniText = mani.querySelector('.mani__text');
+    var marks = [].slice.call(mani.querySelectorAll('.mk')).map(function (el) {
+      var ws = el.querySelectorAll('.w');
+      return { el: el, first: words.indexOf(ws[0]), last: words.indexOf(ws[ws.length - 1]) };
+    });
+    function measureMarks() {
+      if (!maniText) return;
+      var base = maniText.getBoundingClientRect();
+      [].slice.call(maniText.querySelectorAll('.mk__cov')).forEach(function (c) { c.remove(); });
+      marks.forEach(function (m) {
+        var acc = 0;
+        m.covers = [].slice.call(m.el.getClientRects()).map(function (r) {
+          var el = document.createElement('i'); el.className = 'mk__cov'; maniText.appendChild(el);
+          var c = { el: el, x: r.left - base.left - 3, y: r.top - base.top - 3, w: r.width + 6, h: r.height + 6, before: acc };
+          acc += c.w; el.style.top = c.y + 'px'; el.style.left = c.x + 'px'; el.style.width = c.w + 'px'; el.style.height = c.h + 'px';
+          return c;
+        });
+        m.total = acc; m.shown = -1;
+      });
+    }
+    function scrubMark(m, f) {
+      if (!m.covers || Math.abs(f - m.shown) < 0.001) return;
+      m.shown = f;
+      var L = f * m.total;
+      m.covers.forEach(function (c) {
+        var rev = Math.max(0, Math.min(c.w, L - c.before));
+        c.el.style.left = (c.x + rev) + 'px';
+        c.el.style.width = Math.max(0, c.w - rev) + 'px';
+      });
+    }
+    var frame = function () {
+      var r = mani.getBoundingClientRect();
+      var H = mani.offsetHeight || 1;
+      var vh = window.innerHeight;
+      var p = Math.max(0, Math.min(1, -r.top / Math.max(1, H - vh) * 1.15));
+      var lit = p * words.length;
+      for (var i = 0; i < words.length; i++) {
+        var w = words[i];
+        w.style.opacity = (0.14 + 0.86 * Math.max(0, Math.min(1, lit - i))).toFixed(3);
+        if (w.classList.contains('w--x')) w.style.setProperty('--xp', Math.max(0, Math.min(1, (lit - i - 0.15) / 0.85)).toFixed(3));
+      }
+      marks.forEach(function (m) {
+        m.el.classList.toggle('is-on', lit >= m.last + 1);
+        scrubMark(m, Math.max(0, Math.min(1, (lit - m.first) / Math.max(1, m.last + 1 - m.first))));
+      });
+    };
+    var kick = function () { requestAnimationFrame(frame); };
+    window.addEventListener('scroll', kick, { passive: true });
+    window.addEventListener('resize', function () { measureMarks(); kick(); });
+    measureMarks(); frame();
+    window.addEventListener('load', function () { measureMarks(); kick(); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { measureMarks(); kick(); });
+  }
+
   /* ---- phone hero: "lazy susan" of best-selling roasts --------------------- */
   /* After Osmo's Depth Tiles loop: each bag's offset from the current position
      is clamped to [-2, 2] and mapped onto half an orbit (angle = rel/2 * PI),
@@ -1092,7 +1183,7 @@
     var root = scope || document;
     initMenu(root); initNavTuck(); initOneLineTitles(root); initMarquee(root); initUfo(root);
     initStickySteps(root); initTimeline(root); initScrollTo(root); initBeanFields(root);
-    initSplitReveal(root); initHeroSusan(root); initBeanPhysics(root); initSweeps(root); initEdgeFades(root);
+    initSplitReveal(root); initMani(root); initLblDraw(root); initHeroSusan(root); initBeanPhysics(root); initSweeps(root); initEdgeFades(root);
   }
 
   /* ---- Press physics (every button, one feel) ------------------------------

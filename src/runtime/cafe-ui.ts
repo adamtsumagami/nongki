@@ -228,41 +228,30 @@ function hasActiveFilters(): boolean {
 
 function renderCafeCard(cafe: Cafe, now: Date): string {
   const tags = [
-    ...cafe.vibes.slice(0, 3),
+    ...cafe.vibes.slice(0, 2),
     ...cafe.facilities.slice(0, 2),
-  ];
+  ].slice(0, 3);
 
   return `
     <article class="cc" style="--cc-accent:${esc(cafe.accentColor)}">
-      <div class="cc__media">
-        <span class="cc__mono">${esc(getInitials(cafe.name))}</span>
-        <div class="cc__media-top">
-          <span class="cc__area">${esc(cafe.city)} · ${esc(cafe.area)}</span>
-          ${statusMarkup(cafe, now)}
-        </div>
-      </div>
-      <div class="cc__body">
+      <div class="cc__media" aria-hidden="true"><span class="cc__mono">${esc(getInitials(cafe.name))}</span></div>
+      <div class="cc__main">
+        <div class="cc__topline"><span class="cc__area">${esc(cafe.city)} · ${esc(cafe.area)}</span>${statusMarkup(cafe, now)}</div>
         <h3 class="cc__name">${esc(cafe.name)}</h3>
-        <p class="cc__tag">${esc(cafe.tagline)}</p>
-        <div class="cc__meta">
-          <span>★ ${esc(cafe.rating.toFixed(1))}</span>
-          <span>${esc(formatReviewCount(cafe.reviewCount))} ulasan</span>
-          <span>${esc(PRICE_LEVEL_SHORT[cafe.priceLevel])}</span>
-          <span>${esc(formatHours(cafe))}</span>
-        </div>
+        <div class="cc__meta"><span>★ ${esc(cafe.rating.toFixed(1))}</span><span>${esc(formatReviewCount(cafe.reviewCount))} ulasan</span><span>${esc(PRICE_LEVEL_SHORT[cafe.priceLevel])}</span><span>${esc(formatHours(cafe))}</span></div>
         <div class="cc__tags">${tags.map((tag) => `<span>${esc(tag)}</span>`).join('')}</div>
-        <div class="cc__actions">
-          <a class="cc__cta" href="${esc(cafe.mapsUrl)}" target="_blank" rel="noopener">${ICONS.pin}Rute ke sana</a>
-          ${saveButton(cafe, { className: 'cc__icon', idle: 'Simpan', active: 'Tersimpan' })}
-          ${visitedButton(cafe, { className: 'cc__icon', idle: 'Tandai', active: 'Dikunjungi' })}
-        </div>
-        <details class="cc__more">
-          <summary>Detail &amp; menu</summary>
-          <p>${esc(cafe.description)}</p>
-          <div class="cc__menu">${cafe.menuHighlights.map((item) => `<span>${esc(item)}</span>`).join('')}</div>
-          <p style="margin-top:8px">${esc(cafe.address)}</p>
-        </details>
       </div>
+      <div class="cc__side">
+        <a class="cc__cta" href="${esc(cafe.mapsUrl)}" target="_blank" rel="noopener">${ICONS.pin}<span>Rute</span></a>
+        ${saveButton(cafe, { className: 'cc__icon', idle: 'Simpan', active: 'Tersimpan' })}
+        ${visitedButton(cafe, { className: 'cc__icon', idle: 'Tandai', active: 'Dikunjungi' })}
+      </div>
+      <details class="cc__more">
+        <summary>Detail &amp; menu</summary>
+        <p>${esc(cafe.description)}</p>
+        <div class="cc__menu">${cafe.menuHighlights.map((item) => `<span>${esc(item)}</span>`).join('')}</div>
+        <p style="margin-top:8px">${esc(cafe.address)}</p>
+      </details>
     </article>
   `;
 }

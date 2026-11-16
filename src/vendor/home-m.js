@@ -354,7 +354,7 @@ class HomeM {
       sec, track: sec.querySelector('[data-hs-track]'), bar: sec.querySelector('[data-hs-bar]'), pin: sec.querySelector('.hs__pin'), pinH: 0, pinTop: 0,
       items: [].slice.call(sec.querySelectorAll('[data-tilt-item]')).map((el) => ({ el, rot: 0 })), dist: 0
     }));
-    const mani = root.querySelector('[data-reveal]');
+    const mani = root.querySelector('[data-reveal]') || document.querySelector('.mani[data-mani="mobile"]');
     const words = mani ? [].slice.call(mani.querySelectorAll('.w')) : [];
     const marks = mani ? [].slice.call(mani.querySelectorAll('.mk')).map((el) => { const ws = el.querySelectorAll('.w'); return { el, first: words.indexOf(ws[0]), last: words.indexOf(ws[ws.length - 1]) }; }) : [];
     const fits = [].slice.call(root.querySelectorAll('[data-fit]'));
