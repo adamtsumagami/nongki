@@ -34,7 +34,6 @@ describe('Nongki Platform', () => {
       'shopify-section-template--20401917558953__app',
       'shopify-section-template--20401917558953__subscribe',
       'shopify-section-sections--20401917100201__footer',
-      'shopify-section-cart-data',
     ];
     for (const id of sections) {
       expect(document.getElementById(id), `missing section ${id}`).not.toBeNull();
@@ -66,38 +65,25 @@ describe('Nongki Platform', () => {
     expect(document.body.dataset.menuStatus).toBe('closed');
   });
 
-  it('adds a roast via localShopifyShim and updates the real cart drawer DOM', async () => {
-    const res = await fetch('/cart/add.js', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items: [{ id: 100101, quantity: 1 }] }),
-    });
-    expect(res.ok).toBe(true);
+  it('opens the daftar simpan drawer via the header bucket button', () => {
+    const bucket = document.querySelector('[data-bucket]') as HTMLElement;
+    const toggle = document.querySelector('[data-bucket-toggle]') as HTMLElement;
+    expect(bucket).not.toBeNull();
+    expect(toggle).not.toBeNull();
 
-    const win = window as unknown as { AC?: { refreshCart?: () => Promise<void> } };
-    await win.AC?.refreshCart?.();
-    await new Promise((r) => setTimeout(r, 20));
+    expect(bucket.classList.contains('is-open')).toBe(false);
+    toggle.click();
+    expect(bucket.classList.contains('is-open')).toBe(true);
+    expect(bucket.getAttribute('aria-hidden')).toBe('false');
 
-    const item = document.querySelector('.cart-item');
-    expect(item).not.toBeNull();
-    expect(item?.textContent).toContain('The Antidote');
-    expect(document.querySelector('[data-cart-checkout-total]')?.textContent).toContain('12.00');
+    const close = bucket.querySelector('[data-bucket-close]') as HTMLElement;
+    close.click();
+    expect(bucket.classList.contains('is-open')).toBe(false);
+    expect(bucket.getAttribute('aria-hidden')).toBe('true');
   });
 
-  it('does not trap mouse wheel scrolling on the bean physics canvas and returns 400 on malformed JSON payloads', async () => {
+  it('does not trap mouse wheel scrolling on the bean physics canvas', () => {
     expect(themeSource).toContain("mouse.element.removeEventListener('wheel', mouse.mousewheel)");
     expect(themeSource).not.toContain('initFvp(');
-
-    const badRes = await fetch('/cart/add.js', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: '{invalid-json',
-    });
-    expect(badRes.status).toBe(400);
-
-    const res = await fetch('/cart/clear.js', { method: 'POST' });
-    const data = await res.json();
-    expect(data.item_count).toBe(0);
-    expect(data.items).toHaveLength(0);
   });
 });

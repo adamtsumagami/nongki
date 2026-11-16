@@ -1,6 +1,5 @@
 import Lenis from 'lenis';
 import Matter from 'matter-js';
-import { installLocalShopifyShim } from './localShopifyShim';
 
 declare global {
   interface Window {
@@ -11,5 +10,4 @@ declare global {
 
 window.Lenis = Lenis;
 window.Matter = Matter;
-installLocalShopifyShim();
 
