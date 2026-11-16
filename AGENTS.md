@@ -65,9 +65,15 @@ src/main.ts, src/test/setup.ts
 
 - Lenis smooth scroll works; `data-lenis-prevent` on drawers opts out.
 - Cart/account/checkout/buying flow fully removed.
-- Seed data: 22 fictional cafes across 8 cities (Jakarta, Bandung, Yogyakarta, Surabaya, Medan, Makassar, Denpasar, Pontianak — Pontianak has 8, the rest 2 each), including WIB/WITA timezone handling.
-- Legacy unreferenced assets removed (53 files: Apocalypse product images, bags, etc.). `public/assets/` is now 42 files (~5 MB); `dist/` rebuilt at ~5.4 MB. Verification: `npm run test` 36/36; `npm run build` OK. Do not re-add those assets.
-- Known rough edges (accepted, not bugs): very long mobile catalog list; seed data is unverified; legacy sections still hidden on mobile.
+- Seed data: 22 fictional cafes across 8 cities (Jakarta, Bandung, Yogyakarta, Surabaya, Medan, Makassar, Denpasar, Pontianak - Pontianak has 8, the rest 2 each), including WIB/WITA timezone handling.
+- Legacy unreferenced assets removed (53 files: Apocalypse product images, bags, etc.). `public/assets/` is now ~40 files (~5 MB); `dist/` rebuilt at ~5.4 MB. Do not re-add those assets.
+- Manifesto (`.mani`) exists on **both** viewports with intentionally duplicated markup: `data-mani="mobile"` (inside `home_mobile`, after mobile hero) and `data-mani="desktop"` (MainContent, after desktop hero). `theme.js` binds the desktop copy; `home-m.js` binds the mobile copy. Don't delete either or collapse them.
+- Promoted `--ac` to `base.css :root` (was only ever injected by Shopify; `.sq-btn` rendered transparent without it before this was fixed).
+- Word-by-word lighting on scroll: split headings now rise AND fade from `opacity:.18`. Kicker chips (`.lbl`) draw in with an orange brush stroke on scroll (`initLblDraw` in theme.js).
+- `body.grain-noise::after` at opacity .18 (white procedural grain); `.grain-overlay` uses `film-dust.png`. Both hidden on mobile to save render cost.
+- Brand seal replaced with a hand-drawn Nongki mark (double ring + bean; "DIREKTORI KAFE INDONESIA" on the top arc, "NONGKI" on the bottom).
+- Catalog cards are compact horizontal rows (thumb left, info center, actions right).
+- Known rough edges (accepted, not bugs): seed data is unverified; some legacy desktop sections (`.revs`, `.locs`, `.rev2`, `.save`, `.more`, `.hs.*`) still hidden on mobile.
 
 ## Testing & verification
 
