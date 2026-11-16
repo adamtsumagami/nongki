@@ -389,7 +389,7 @@
     if (ss) {
       ss.hidden = subSave <= 0;
       var ssl = ss.querySelector('[data-cart-sub-savings-label]');
-      if (ssl) ssl.textContent = 'Subscription savings' + (subCount > 1 ? ' (' + subCount + ' items)' : '');
+      if (ssl) ssl.textContent = 'Penghematan Langganan' + (subCount > 1 ? ' (' + subCount + ' item)' : '');
       var ssa = ss.querySelector('[data-cart-sub-savings-amt]');
       if (ssa) ssa.textContent = '−' + money(subSave);
     }
