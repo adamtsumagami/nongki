@@ -2,7 +2,7 @@
   "name": "nongki",
   "private": true,
   "version": "1.0.0",
-  "description": "Direktori dan platform kurasi kafe serta kedai kopi di Indonesia.",
+  "description": "Directory and curation platform for cafes and coffee shops in Indonesia.",
   "license": "MIT",
   "type": "module",
   "scripts": {
