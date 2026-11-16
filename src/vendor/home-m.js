@@ -59,7 +59,7 @@ class HomeM {
     const setOpen = (open) => {
       if (open) { followOn(); lock(); } else { followOff(); unlock(); }
       body.dataset.menuStatus = open ? 'open' : 'closed';
-      toggles.forEach((b) => { b.setAttribute('aria-expanded', String(open)); b.setAttribute('aria-label', open ? 'Close menu' : 'Open menu'); });
+      toggles.forEach((b) => { b.setAttribute('aria-expanded', String(open)); b.setAttribute('aria-label', open ? 'Tutup menu' : 'Buka menu'); });
     };
     toggles.forEach((b) => b.addEventListener('click', () => setOpen(body.dataset.menuStatus !== 'open')));
     root.querySelectorAll('[data-menu-close]').forEach((el) => el.addEventListener('click', () => setOpen(false)));
@@ -114,7 +114,7 @@ class HomeM {
     // the live hero's caption (initHeroSusan caption()): rank, name, "Trending" when tagged, level · notes, price
     const caption = (k) => {
       const d = items[k].dataset;
-      if (capRank) { capRank.textContent = '#' + (k + 1); capRank.setAttribute('aria-label', 'Number ' + (k + 1) + ' best seller'); }
+      if (capRank) { capRank.textContent = '#' + (k + 1); capRank.setAttribute('aria-label', 'Nomor ' + (k + 1) + ' terlaris'); }
       if (capName) capName.textContent = d.name;
       if (capMeta) capMeta.textContent = d.meta;
       if (capTrend) { capTrend.hidden = !d.trend; capTrend.textContent = d.trend ? '\u25B2 ' + d.trend + ' \u00B7 ' : ''; }

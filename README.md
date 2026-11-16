@@ -1,162 +1,106 @@
-# ☕ Nongki — Direktori & Eksplorasi Cafe Pontianak
+# Nongki — Direktori & Rekomendasi Kafe Indonesia
 
-> **Temukan spot ngopi terbaik di Kota Khatulistiwa tanpa bingung lagi mau nongkrong di mana!**
+Nongki adalah aplikasi web untuk menemukan dan menjelajahi kafe serta kedai kopi di berbagai kota di Indonesia. Proyek ini membantu pengguna memilih tempat nongkrong, ngopi, atau kerja berdasarkan kota, suasana, fasilitas, dan status buka.
 
-[![Vite](https://img.shields.io/badge/Vite-6.1-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Status](https://img.shields.io/badge/Status-In%20Development-orange)](#)
-[![Location](https://img.shields.io/badge/Focus-Pontianak%2C%20Kalbar-green)](#)
+## Fitur
 
----
+- **Direktori kafe lintas kota** — jelajahi daftar kafe beserta area, suasana, fasilitas, rentang harga, dan tautan lokasi.
+- **Pencarian & filter** — cari kafe dan saring berdasarkan kota, status buka, serta kebutuhan seperti tempat ramah kerja.
+- **Pilih Acak** — dapatkan rekomendasi kafe secara acak, termasuk opsi yang sedang buka.
+- **Kafe Pilihan Hari Ini** — rekomendasi harian dari daftar kafe yang tersedia.
+- **Daftar Simpan** — simpan kafe favorit di peramban untuk dibuka kembali nanti.
 
-## Tentang Nongki
+## Cakupan Data Saat Ini
 
-**Nongki** adalah platform web direktori dan panduan eksplorasi *coffee shop* serta kafe yang berlokasi di **Kota Pontianak, Kalimantan Barat**. 
+Data awal mencakup contoh kafe di kota berikut:
+- Jakarta
+- Bandung
+- Yogyakarta
+- Surabaya
+- Medan
+- Makassar
+- Denpasar
+- Pontianak
 
-Pontianak terkenal dengan tradisi ngopinya yang begitu kental—dari deretan warkop legendaris di Jalan Gajah Mada hingga kafe-kafe modern dan *aesthetic* yang tersebar di Reformasi, Podomoro, Hijas, hingga Siantan. Namun, seringkali kita menghadapi dilema klasik: *"Mau nongkrong di mana hari ini?"* atau *"Ada rekomendasi tempat yang enak buat WFC gak?"*.
+> **Catatan:** Data kafe saat ini bersifat contoh/ilustratif dan perlu diverifikasi sebelum digunakan sebagai informasi final.
 
-**Nongki** hadir untuk menyelesaikan masalah tersebut dengan menyajikan kurasi kafe lengkap, interaktif, dan fitur-fitur seru untuk menemani gaya hidup nongkrong masyarakat Pontianak maupun wisatawan.
+## Teknologi
 
----
+- [Vite](https://vitejs.dev/) — bundler dan server pengembangan
+- [TypeScript](https://www.typescriptlang.org/) — bahasa pemrograman
+- CSS — styling antarmuka
+- [Lenis](https://lenis.darkroom.engineering/) — gulir halus
+- [Matter.js](https://brm.io/matter-js/) — animasi fisika 2D
+- [Vitest](https://vitest.dev/) & [Testing Library](https://testing-library.com/) — pengujian
 
-## Fitur Unggulan
-
-### 1. Direktori & Katalog Cafe Pontianak
-* **Database Lengkap**: Jelajahi kafe dan coffee shop di berbagai kawasan Pontianak.
-* **Filter Sesuai Kebutuhan**: Saring tempat berdasarkan:
-  * Suasana: *Cozy, Outdoor, Work From Cafe (WFC), Aesthetic/Instagramable, Late Night*.
-  * Fasilitas: *Wi-Fi kencang, banyak colokan, area merokok (smoking area), musala, live music*.
-  * Kawasan/Kecamatan & rentang harga (*budget-friendly* s/d *specialty coffee*).
-* **Profil Detail**: Alamat & tautan Google Maps, jam operasional, menu andalan, dan tautan media sosial.
-
-### 2. Random Cafe Picker (*"Gacha Tongkrongan"*)
-* Solusi instan untuk perdebatan abadi *"Terserah mau ke mana"*.
-* Cukup tekan satu tombol, sistem akan memilihkan kafe secara acak dari database.
-* Dilengkapi opsi kriteria kilat (misal: hanya kafe yang buka sekarang, punya Wi-Fi, atau dalam radius tertentu).
-
-### 3. Cafe of the Day
-* Rekomendasi harian terkurasi yang diperbarui setiap hari.
-* Menyorot *hidden gem* lokal, kafe bernuansa unik, atau tempat dengan promo/menu musiman yang wajib dicoba hari ini.
-
-### 4. Cafe Bucketlist
-* **Wishlist Pribadi**: Simpan kafe-kafe menarik yang ingin dikunjungi di akhir pekan.
-* **Tandai Sudah Dikunjungi**: Catat perjalanan *cafe-hopping* kamu di Pontianak.
-* Tersimpan rapi di browser sehingga daftar favoritmu selalu siap diakses kapan saja.
-
----
-
-## Tech Stack
-
-Project ini dibangun menggunakan teknologi web modern untuk memastikan performa yang cepat, interaksi yang mulus, dan pengalaman pengguna yang responsif:
-
-* **Bundler & Tooling**: [Vite](https://vitejs.dev/)
-* **Language**: [TypeScript](https://www.typescriptlang.org/)
-* **Styling**: Modern CSS / Modular Styling
-* **Interactive & Animation**:
-  * [Lenis](https://lenis.darkroom.engineering/) — *Smooth Scrolling Experience*
-  * [Matter.js](https://brm.io/matter-js/) — *2D Physics Engine untuk animasi interaktif*
-* **Testing**: [Vitest](https://vitest.dev/) & [Testing Library](https://testing-library.com/)
-
----
-
-## Struktur Direktori
+## Struktur Proyek
 
 ```text
-nongki/
-├── public/              # Aset statis (gambar, icon, favicon)
+.
+├── public/              # Aset statis publik
 ├── src/
-│   ├── runtime/         # Konfigurasi runtime & bootstrap globals
-│   ├── styles/          # File styling (base.css, fonts.css, layout)
-│   ├── vendor/          # Komponen script & modul pendukung
-│   ├── test/            # Setup test unit & integrasi
-│   ├── main.ts          # Entry point utama TypeScript
-│   └── vite-env.d.ts    # Deklarasi tipe lingkungan Vite
-├── index.html           # File markup HTML utama
+│   ├── data/            # Data dan model kafe
+│   ├── lib/             # Logika bantu, filter, dan utilitas
+│   ├── runtime/         # Inisialisasi dan perilaku UI runtime
+│   ├── styles/          # Berkas gaya (CSS)
+│   ├── vendor/          # Skrip/modul pendukung
+│   ├── test/            # Pengaturan pengujian
+│   ├── main.ts          # Titik masuk aplikasi
+│   └── main.test.ts     # Pengujian utama
+├── index.html           # Markup HTML utama
 ├── package.json         # Dependensi dan skrip npm
-├── tsconfig.json        # Konfigurasi TypeScript
-└── vite.config.ts       # Konfigurasi build Vite
+├── tsconfig*.json       # Konfigurasi TypeScript
+└── vite.config.ts       # Konfigurasi Vite
 ```
 
----
+## Prasyarat
 
-## Memulai (Getting Started)
+- [Node.js](https://nodejs.org/) 18 atau lebih baru (disarankan)
+- npm (terpasang bersama Node.js)
 
-Ikuti langkah-langkah berikut untuk menjalankan proyek ini di komputer lokal Anda:
+## Menjalankan Proyek
 
-### Prasyarat
-Pastikan Anda sudah menginstal:
-* [Node.js](https://nodejs.org/) (versi 18.x atau lebih baru disarankan)
-* npm (biasanya terpasang bersama Node.js) atau pnpm / yarn
-
-### 1. Kloning Repositori
-```bash
-git clone https://github.com/adamtsumagami/nongki.git
-cd nongki
-```
-
-### 2. Instal Dependensi
-```bash
-npm install
-```
-
-### 3. Jalankan Server Pengembangan
-```bash
-npm run dev
-```
-Buka browser dan akses alamat lokal yang muncul di terminal (biasanya `http://localhost:5173`).
-
-### 4. Build untuk Produksi
-```bash
-npm run build
-```
-Hasil build siap *deploy* akan berada di dalam folder `dist/`.
-
-### 5. Menjalankan Pengujian (Testing)
-```bash
-npm run test
-```
-
----
-
-## Roadmap Pengembangan
-
-- [x] Inisialisasi struktur proyek dan desain tema utama
-- [ ] Integrasi database katalog kafe Pontianak (alamat, jam buka, fasilitas)
-- [ ] Implementasi fitur **Random Cafe Picker** interaktif
-- [ ] Implementasi fitur **Cafe of the Day**
-- [ ] Implementasi penyimpanan **Cafe Bucketlist** (Local Storage / Sync)
-- [ ] Integrasi rute dan peta interaktif (Google Maps API / Leaflet)
-- [ ] Fitur kurasi ulasan & kontribusi data kafe baru dari komunitas
-
----
-
-## Berkontribusi
-
-Punya rekomendasi *coffee shop* favorit di Pontianak atau ingin membantu menyempurnakan fitur Nongki? Kontribusi sangat terbuka!
-
-1. *Fork* repositori ini.
-2. Buat *branch* fitur baru Anda:
+1. **Instal dependensi**
    ```bash
-   git checkout -b feature/nama-fitur-baru
+   npm install
    ```
-3. Lakukan *commit* perubahan:
-   ```bash
-   git commit -m "feat: tambah fitur random picker filter"
-   ```
-4. *Push* ke *branch* Anda:
-   ```bash
-   git push origin feature/nama-fitur-baru
-   ```
-5. Buka **Pull Request**.
 
----
+2. **Jalankan mode pengembangan**
+   ```bash
+   npm run dev
+   ```
+   Buka alamat lokal yang ditampilkan di terminal (biasanya `http://localhost:5173`).
+
+3. **Buat build produksi**
+   ```bash
+   npm run build
+   ```
+   Hasil build tersedia di folder `dist/`.
+
+4. **Pratinjau build produksi**
+   ```bash
+   npm run preview
+   ```
+
+5. **Jalankan pengujian**
+   ```bash
+   npm run test
+   ```
+
+## Status Proyek
+
+Proyek masih dalam pengembangan. Fokus saat ini meliputi penyempurnaan data kafe, konsistensi bahasa antarmuka, dan peningkatan pengalaman pengguna.
+
+## Kontribusi
+
+Kontribusi terbuka untuk perbaikan fitur, data, dan dokumentasi.
+
+1. Fork repositori ini.
+2. Buat branch fitur: `git checkout -b feat/nama-fitur`
+3. Commit perubahan: `git commit -m "feat: deskripsi singkat"`
+4. Push branch: `git push origin feat/nama-fitur`
+5. Buka Pull Request.
 
 ## Lisensi
 
-Proyek ini dirilis di bawah lisensi [MIT](LICENSE).
-
----
-
-<p align="center">
-  Dibuat dengan ☕ dan semangat anak nongkrong Pontianak.
-</p>
+Proyek ini menggunakan lisensi [MIT](LICENSE).

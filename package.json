@@ -2,7 +2,7 @@
   "name": "nongki",
   "private": true,
   "version": "1.0.0",
-  "description": "Curated directory and discovery platform for coffee shops and cafes in Pontianak.",
+  "description": "Direktori dan platform kurasi kafe serta kedai kopi di Indonesia.",
   "license": "MIT",
   "type": "module",
   "scripts": {

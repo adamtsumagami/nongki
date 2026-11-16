@@ -1,55 +1,77 @@
 import { describe, expect, it } from 'vitest';
 import { CAFES_DATA, type Cafe } from '../data/cafes';
 import {
-  ALL_AREAS,
+  SEMUA_KOTA,
   filterCafes,
   formatHours,
   getCafeOfTheDay,
   getInitials,
+  getLocalDateKey,
+  getLocalMinutes,
   getOpenStatus,
-  getPontianakDateKey,
-  getPontianakMinutes,
   isOpenAt,
   pickRandomCafe,
 } from './cafes';
 
-/** 14 Nov 2026, 10:00 WIB. */
+/** 14 Nov 2026, 10:00 WIB / 11:00 WITA. */
 const AT_10_WIB = new Date('2026-11-14T03:00:00Z');
-/** 14 Nov 2026, 23:00 WIB. */
+/** 14 Nov 2026, 23:00 WIB / 00:00 WITA. */
 const AT_23_WIB = new Date('2026-11-14T16:00:00Z');
 
 const overnight: Cafe = {
   ...CAFES_DATA[0],
   id: 'overnight-test',
-  name: 'Cafe Tengah Malam',
+  name: 'Kafe Tengah Malam',
   opensAt: '18:00',
   closesAt: '01:00',
   open24: false,
 };
 
-describe('waktu Pontianak', () => {
+describe('waktu lokal per zona', () => {
   it('menghitung jam WIB dari timestamp UTC', () => {
-    expect(getPontianakMinutes(AT_10_WIB)).toBe(10 * 60);
-    expect(getPontianakDateKey(AT_10_WIB)).toBe('2026-11-14');
+    expect(getLocalMinutes(AT_10_WIB)).toBe(10 * 60);
+    expect(getLocalDateKey(AT_10_WIB)).toBe('2026-11-14');
   });
 
   it('memakai WIB walau zona waktu perangkat berbeda', () => {
     // 17:30 UTC = 00:30 WIB tanggal berikutnya.
     const date = new Date('2026-11-14T17:30:00Z');
-    expect(getPontianakMinutes(date)).toBe(30);
-    expect(getPontianakDateKey(date)).toBe('2026-11-15');
+    expect(getLocalMinutes(date)).toBe(30);
+    expect(getLocalDateKey(date)).toBe('2026-11-15');
+  });
+
+  it('mendukung WITA untuk kota di Indonesia tengah', () => {
+    // 00:30 UTC = 07:30 WIB = 08:30 WITA.
+    const date = new Date('2026-11-14T00:30:00Z');
+    expect(getLocalMinutes(date, 'Asia/Makassar')).toBe(8 * 60 + 30);
+    expect(getLocalDateKey(date, 'Asia/Makassar')).toBe('2026-11-14');
+
+    // 17:30 UTC = 01:30 WITA tanggal berikutnya.
+    const late = new Date('2026-11-14T17:30:00Z');
+    expect(getLocalMinutes(late, 'Asia/Makassar')).toBe(90);
+    expect(getLocalDateKey(late, 'Asia/Makassar')).toBe('2026-11-15');
   });
 });
 
 describe('jam operasional', () => {
-  it('mengenali cafe yang sedang buka dan tutup', () => {
+  it('mengenali kafe yang sedang buka dan tutup', () => {
     const asiang = CAFES_DATA.find((cafe) => cafe.id === 'asiang')!;
     expect(isOpenAt(asiang, AT_10_WIB)).toBe(true);
     expect(isOpenAt(asiang, AT_23_WIB)).toBe(false);
     expect(getOpenStatus(asiang, AT_10_WIB)).toEqual({ open: true, label: 'Buka sekarang' });
   });
 
-  it('mendukung cafe 24 jam', () => {
+  it('memakai zona waktu kota masing-masing', () => {
+    const makassar = CAFES_DATA.find((cafe) => cafe.id === 'kopi-daeng-losari')!;
+    // 07:30 WIB sudah 08:30 WITA, jadi kafe Makassar sudah buka.
+    const pagi = new Date('2026-11-14T00:30:00Z');
+    expect(isOpenAt(makassar, pagi)).toBe(true);
+    // 23:30 WIB sudah 00:30 WITA, kafe sudah tutup.
+    const malam = new Date('2026-11-14T16:30:00Z');
+    expect(isOpenAt(makassar, malam)).toBe(false);
+  });
+
+  it('mendukung kafe 24 jam', () => {
     const cw = CAFES_DATA.find((cafe) => cafe.id === 'cw-coffee-reformasi')!;
     expect(isOpenAt(cw, AT_23_WIB)).toBe(true);
     expect(isOpenAt(cw, new Date('2026-11-14T20:00:00Z'))).toBe(true);
@@ -63,24 +85,32 @@ describe('jam operasional', () => {
     // 02:00 WIB
     expect(isOpenAt(overnight, new Date('2026-11-14T19:00:00Z'))).toBe(false);
   });
+
+  it('menampilkan label zona waktu pada jam buka', () => {
+    const asiang = CAFES_DATA.find((cafe) => cafe.id === 'asiang')!;
+    expect(formatHours(asiang)).toBe('04:00 - 13:00 WIB');
+
+    const makassar = CAFES_DATA.find((cafe) => cafe.id === 'kopi-daeng-losari')!;
+    expect(formatHours(makassar)).toBe('08:00 - 23:00 WITA');
+  });
 });
 
 describe('filter katalog', () => {
-  it('menyaring berdasarkan kawasan', () => {
-    const result = filterCafes(CAFES_DATA, { area: 'Reformasi' });
+  it('menyaring berdasarkan kota', () => {
+    const result = filterCafes(CAFES_DATA, { city: 'Bandung' });
     expect(result.length).toBeGreaterThan(0);
-    expect(result.every((cafe) => cafe.area === 'Reformasi')).toBe(true);
+    expect(result.every((cafe) => cafe.city === 'Bandung')).toBe(true);
   });
 
-  it('label "Semua Kawasan" tidak menyaring apa pun', () => {
-    expect(filterCafes(CAFES_DATA, { area: ALL_AREAS })).toHaveLength(CAFES_DATA.length);
+  it('label "Semua Kota" tidak menyaring apa pun', () => {
+    expect(filterCafes(CAFES_DATA, { city: SEMUA_KOTA })).toHaveLength(CAFES_DATA.length);
   });
 
   it('menerapkan beberapa suasana sekaligus (AND)', () => {
-    const result = filterCafes(CAFES_DATA, { vibes: ['WFC Friendly', 'Aesthetic'] });
+    const result = filterCafes(CAFES_DATA, { vibes: ['Ramah Kerja', 'Estetik'] });
     expect(result.length).toBeGreaterThan(0);
-    expect(result.every((cafe) => cafe.vibes.includes('WFC Friendly'))).toBe(true);
-    expect(result.every((cafe) => cafe.vibes.includes('Aesthetic'))).toBe(true);
+    expect(result.every((cafe) => cafe.vibes.includes('Ramah Kerja'))).toBe(true);
+    expect(result.every((cafe) => cafe.vibes.includes('Estetik'))).toBe(true);
   });
 
   it('menerapkan fasilitas dan pencarian teks', () => {
@@ -90,10 +120,16 @@ describe('filter katalog', () => {
 
     const searched = filterCafes(CAFES_DATA, { query: 'srikaya' });
     expect(searched.length).toBeGreaterThan(0);
-    expect(searched.every((cafe) => cafe.menuHighlights.includes('Roti srikaya') || cafe.menuHighlights.includes('Roti kukus srikaya'))).toBe(true);
+    expect(
+      searched.every(
+        (cafe) =>
+          cafe.menuHighlights.includes('Roti srikaya') ||
+          cafe.menuHighlights.includes('Roti kukus srikaya'),
+      ),
+    ).toBe(true);
   });
 
-  it('menyaring cafe yang buka sekarang', () => {
+  it('menyaring kafe yang buka sekarang', () => {
     const result = filterCafes(CAFES_DATA, { openNow: true, now: AT_10_WIB });
     expect(result.length).toBeGreaterThan(0);
     expect(result.every((cafe) => isOpenAt(cafe, AT_10_WIB))).toBe(true);
@@ -106,7 +142,7 @@ describe('filter katalog', () => {
   });
 });
 
-describe('Cafe of the Day', () => {
+describe('Kafe Pilihan Hari Ini', () => {
   it('deterministik pada hari yang sama', () => {
     const morning = getCafeOfTheDay(CAFES_DATA, AT_10_WIB);
     const night = getCafeOfTheDay(CAFES_DATA, AT_23_WIB);
@@ -126,7 +162,7 @@ describe('Cafe of the Day', () => {
   });
 });
 
-describe('random picker', () => {
+describe('pemilih acak', () => {
   it('menghindari hasil yang sama jika diminta', () => {
     const first = CAFES_DATA[0];
     const result = pickRandomCafe(CAFES_DATA, { excludeId: first.id, random: () => 0 });
@@ -147,7 +183,7 @@ describe('random picker', () => {
 });
 
 describe('utilitas tampilan', () => {
-  it('membuat inisial dari nama cafe', () => {
+  it('membuat inisial dari nama kafe', () => {
     expect(getInitials('Warkop Asiang')).toBe('WA');
     expect(getInitials('Canopy')).toBe('CA');
     expect(getInitials('Dua Cerita Coffee & Space')).toBe('DC');

@@ -131,7 +131,7 @@
         if (open) { navFollowOff(); unlockScroll(); } else { navFollowOn(); lockScroll(); }
         document.body.dataset.menuStatus = open ? 'closed' : 'open';
         btn.setAttribute('aria-expanded', String(!open));
-        btn.setAttribute('aria-label', open ? 'Open menu' : 'Close menu');
+        btn.setAttribute('aria-label', open ? 'Buka menu' : 'Tutup menu');
       });
     });
     root.querySelectorAll('[data-menu-close]').forEach(function (el) {
@@ -256,7 +256,7 @@
       // the drawer snippet ships the empty state (grind loop + shop CTA) in a
       // <template> because asset URLs aren't reachable from JS
       var emptyTpl = document.querySelector('template[data-cart-empty-tpl]');
-      linesHTML = emptyTpl ? emptyTpl.innerHTML : '<div class="cart-drawer__empty">Your cart is empty.</div>';
+      linesHTML = emptyTpl ? emptyTpl.innerHTML : '<div class="cart-drawer__empty">Keranjang Anda kosong.</div>';
     } else {
       linesHTML = cart.items.map(function (it, i) {
         var pd = cartData.products && cartData.products[it.product_id];
@@ -888,14 +888,14 @@
     btn.classList.add('is-added');
     if (label) {
       var prev = label.textContent;
-      label.textContent = qty > 1 ? '✓ Added (' + qty + ')!' : '✓ Added!';
+      label.textContent = qty > 1 ? '✓ Ditambahkan (' + qty + ')!' : '✓ Ditambahkan!';
       btn.style.setProperty('--button-039-color-background', '#30a050');
     } else if (!btn.classList.contains('button-039')) {
       // icon button: swap the plus for a check that draws itself in; the
-      // card's wide button keeps its label, reading "Added"
+      // card's wide button keeps its label, reading "Ditambahkan"
       prevHTML = btn.innerHTML;
       var wide = btn.querySelector('.roast-card__add-label');
-      btn.innerHTML = '<svg class="icon-btn__check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="' + (wide ? '#1a1a1a' : '#f0ede8') + '" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6" pathLength="1"/></svg>' + (wide ? '<span class="roast-card__add-label">Added</span>' : '');
+      btn.innerHTML = '<svg class="icon-btn__check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="' + (wide ? '#1a1a1a' : '#f0ede8') + '" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6" pathLength="1"/></svg>' + (wide ? '<span class="roast-card__add-label">Ditambahkan</span>' : '');
     }
     setTimeout(function () {
       btn.classList.remove('is-added');
@@ -2712,7 +2712,7 @@
 
       function caption(k) {
         var it = items[k];
-        if (elRank) { elRank.textContent = '#' + (k + 1); elRank.setAttribute('aria-label', 'Number ' + (k + 1) + ' best seller'); }
+        if (elRank) { elRank.textContent = '#' + (k + 1); elRank.setAttribute('aria-label', 'Nomor ' + (k + 1) + ' terlaris'); }
         if (elName) elName.textContent = it.dataset.name || '';
         if (elMeta) elMeta.textContent = it.dataset.meta || '';
         if (elTrend) { elTrend.hidden = !it.dataset.trend; elTrend.textContent = it.dataset.trend ? '▲ ' + it.dataset.trend + ' · ' : ''; }

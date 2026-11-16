@@ -1,14 +1,20 @@
-import type { Area, Cafe, Facility, PriceLevel, Vibe } from '../data/cafes';
+import {
+  CITY_INFO,
+  TIME_ZONE_LABELS,
+  type Cafe,
+  type City,
+  type Facility,
+  type PriceLevel,
+  type Vibe,
+} from '../data/cafes';
 
-const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
+export const SEMUA_KOTA = 'Semua Kota' as const;
 
-export const ALL_AREAS = 'Semua Kawasan' as const;
-
-export type AreaFilter = Area | typeof ALL_AREAS;
+export type CityFilter = City | typeof SEMUA_KOTA;
 
 export interface CafeFilters {
   query?: string;
-  area?: AreaFilter;
+  city?: CityFilter;
   vibes?: Vibe[];
   facilities?: Facility[];
   priceLevels?: PriceLevel[];
@@ -21,23 +27,55 @@ export interface OpenStatus {
   label: 'Buka sekarang' | 'Tutup sekarang' | 'Buka 24 jam';
 }
 
+const DEFAULT_TIME_ZONE = 'Asia/Jakarta';
+
 function mod(value: number, divisor: number): number {
   return ((value % divisor) + divisor) % divisor;
 }
 
-/** Menit sejak 00:00 WIB, bukan zona waktu perangkat. */
-export function getPontianakMinutes(now: Date = new Date()): number {
-  const wib = new Date(now.getTime() + WIB_OFFSET_MS);
-  return wib.getUTCHours() * 60 + wib.getUTCMinutes();
+interface ZonedParts {
+  minutes: number;
+  dateKey: string;
 }
 
-/** Kunci tanggal YYYY-MM-DD menurut WIB, dipakai untuk Cafe of the Day. */
-export function getPontianakDateKey(now: Date = new Date()): string {
-  const wib = new Date(now.getTime() + WIB_OFFSET_MS);
-  const year = wib.getUTCFullYear();
-  const month = String(wib.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(wib.getUTCDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+/**
+ * Membaca jam dan tanggal pada zona waktu tertentu, bukan zona waktu perangkat.
+ * Dipakai agar status buka tiap kota tetap benar walau pengguna berada di
+ * zona waktu lain.
+ */
+function getZonedParts(now: Date, timeZone: string): ZonedParts {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(now);
+
+  const values: Record<string, string> = {};
+  for (const part of parts) {
+    if (part.type !== 'literal') values[part.type] = part.value;
+  }
+
+  const hours = Number(values.hour ?? '0');
+  const minutes = Number(values.minute ?? '0');
+
+  return {
+    minutes: mod(hours, 24) * 60 + Math.min(59, Math.max(0, minutes)),
+    dateKey: `${values.year}-${values.month}-${values.day}`,
+  };
+}
+
+/** Menit sejak 00:00 menurut zona waktu kota, default WIB. */
+export function getLocalMinutes(now: Date = new Date(), timeZone: string = DEFAULT_TIME_ZONE): number {
+  return getZonedParts(now, timeZone).minutes;
+}
+
+/** Kunci tanggal YYYY-MM-DD menurut zona waktu kota, dipakai untuk Kafe Pilihan Hari Ini. */
+export function getLocalDateKey(now: Date = new Date(), timeZone: string = DEFAULT_TIME_ZONE): string {
+  return getZonedParts(now, timeZone).dateKey;
 }
 
 /** "HH:MM" -> menit. Nilai yang tidak valid dianggap 00:00. */
@@ -52,7 +90,7 @@ export function isOpenAt(cafe: Cafe, now: Date = new Date()): boolean {
 
   const open = parseTime(cafe.opensAt);
   const close = parseTime(cafe.closesAt);
-  const current = getPontianakMinutes(now);
+  const current = getLocalMinutes(now, CITY_INFO[cafe.city].timeZone);
 
   // Jam buka sama dengan jam tutup diperlakukan sebagai buka sehari penuh.
   if (open === close) return true;
@@ -67,8 +105,13 @@ export function getOpenStatus(cafe: Cafe, now: Date = new Date()): OpenStatus {
   return { open, label: open ? 'Buka sekarang' : 'Tutup sekarang' };
 }
 
+/** Label zona waktu kota, mis. WIB, WITA, atau WIT. */
+export function getTimeZoneLabel(cafe: Cafe): string {
+  return TIME_ZONE_LABELS[CITY_INFO[cafe.city].timeZone];
+}
+
 export function formatHours(cafe: Cafe): string {
-  return cafe.open24 ? 'Buka 24 jam' : `${cafe.opensAt} - ${cafe.closesAt} WIB`;
+  return cafe.open24 ? 'Buka 24 jam' : `${cafe.opensAt} - ${cafe.closesAt} ${getTimeZoneLabel(cafe)}`;
 }
 
 export function formatReviewCount(count: number): string {
@@ -78,12 +121,12 @@ export function formatReviewCount(count: number): string {
   }).format(count);
 }
 
-export function getDailyLabel(now: Date = new Date()): string {
+export function getDailyLabel(now: Date = new Date(), timeZone: string = DEFAULT_TIME_ZONE): string {
   return new Intl.DateTimeFormat('id-ID', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
-    timeZone: 'Asia/Pontianak',
+    timeZone,
   }).format(now);
 }
 
@@ -91,6 +134,7 @@ function searchableText(cafe: Cafe): string {
   return [
     cafe.name,
     cafe.tagline,
+    cafe.city,
     cafe.area,
     cafe.address,
     cafe.bestFor,
@@ -105,14 +149,14 @@ function searchableText(cafe: Cafe): string {
 
 export function filterCafes(cafes: Cafe[], filters: CafeFilters = {}): Cafe[] {
   const query = filters.query?.trim().toLocaleLowerCase('id-ID') ?? '';
-  const area = filters.area ?? ALL_AREAS;
+  const city = filters.city ?? SEMUA_KOTA;
   const vibes = filters.vibes ?? [];
   const facilities = filters.facilities ?? [];
   const priceLevels = filters.priceLevels ?? [];
   const now = filters.now ?? new Date();
 
   return cafes.filter((cafe) => {
-    if (area !== ALL_AREAS && cafe.area !== area) return false;
+    if (city !== SEMUA_KOTA && cafe.city !== city) return false;
     if (vibes.length > 0 && !vibes.every((vibe) => cafe.vibes.includes(vibe))) return false;
     if (facilities.length > 0 && !facilities.every((facility) => cafe.facilities.includes(facility))) {
       return false;
@@ -125,12 +169,13 @@ export function filterCafes(cafes: Cafe[], filters: CafeFilters = {}): Cafe[] {
 }
 
 /**
- * Rotasi harian yang deterministik: cafe yang sama selalu tampil pada tanggal
+ * Rotasi harian yang deterministik: kafe yang sama selalu tampil pada tanggal
  * yang sama, dan berganti setiap hari tanpa perlu backend.
  */
 export function getCafeOfTheDay(cafes: Cafe[], now: Date = new Date()): Cafe | undefined {
   if (cafes.length === 0) return undefined;
-  const days = Math.floor((now.getTime() + WIB_OFFSET_MS) / 86_400_000);
+  const [year, month, day] = getLocalDateKey(now).split('-').map(Number);
+  const days = Math.floor(Date.UTC(year, month - 1, day) / 86_400_000);
   const secret = 17;
   return cafes[mod(days + secret, cafes.length)];
 }

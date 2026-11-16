@@ -1,9 +1,9 @@
 /**
  * Runtime UI Nongki, Fase 1:
- * - Cafe of the Day di hero mobile
+ * - Kafe Pilihan Hari Ini di hero mobile
  * - katalog + filter
- * - random picker
- * - drawer bucketlist
+ * - pemilih acak
+ * - laci daftar simpan
  *
  * Semua teks berasal dari data statis, tetapi tetap di-escape karena nanti
  * data bisa datang dari luar (mis. CMS atau API).
@@ -11,8 +11,8 @@
 
 import {
   CAFES_DATA,
+  CITIES,
   FACILITIES,
-  PONTIANAK_AREAS,
   PRICE_LEVELS,
   PRICE_LEVEL_SHORT,
   VIBES,
@@ -22,7 +22,7 @@ import {
   type Vibe,
 } from '../data/cafes';
 import {
-  ALL_AREAS,
+  SEMUA_KOTA,
   filterCafes,
   formatHours,
   formatReviewCount,
@@ -31,9 +31,9 @@ import {
   getDailyLabel,
   getInitials,
   getOpenStatus,
-  getPontianakDateKey,
+  getLocalDateKey,
   pickRandomCafe,
-  type AreaFilter,
+  type CityFilter,
 } from '../lib/cafes';
 import {
   getBucketlist,
@@ -78,7 +78,7 @@ function saveButton(
 ): string {
   const on = isWishlisted(cafe.id);
   const label = on ? options.active : options.idle;
-  return `<button class="${options.className}${on ? ' is-on' : ''}" type="button" data-cafe-save="${esc(cafe.id)}" data-label-idle="${esc(options.idle)}" data-label-active="${esc(options.active)}" aria-pressed="${on}" aria-label="${on ? 'Hapus dari wishlist' : 'Simpan ke wishlist'}">${ICONS.bookmark}<span data-save-label>${esc(label)}</span></button>`;
+  return `<button class="${options.className}${on ? ' is-on' : ''}" type="button" data-cafe-save="${esc(cafe.id)}" data-label-idle="${esc(options.idle)}" data-label-active="${esc(options.active)}" aria-pressed="${on}" aria-label="${on ? 'Hapus dari daftar simpan' : 'Simpan ke daftar simpan'}">${ICONS.bookmark}<span data-save-label>${esc(label)}</span></button>`;
 }
 
 function visitedButton(
@@ -91,14 +91,14 @@ function visitedButton(
 }
 
 /* ------------------------------------------------------------------ */
-/* Cafe of the Day                                                     */
+/* Kafe Pilihan Hari Ini                                               */
 /* ------------------------------------------------------------------ */
 
 let codDateKey = '';
 
 function renderCafeOfTheDay(container: HTMLElement): void {
   const now = new Date();
-  codDateKey = getPontianakDateKey(now);
+  codDateKey = getLocalDateKey(now);
   const cafe = getCafeOfTheDay(CAFES_DATA, now);
 
   if (!cafe) {
@@ -111,23 +111,23 @@ function renderCafeOfTheDay(container: HTMLElement): void {
 
   container.innerHTML = `
     <div class="cod__head">
-      <span class="cod__kicker"><i></i>Cafe of the Day</span>
+      <span class="cod__kicker"><i></i>Kafe Pilihan Hari Ini</span>
       <span class="cod__date">${esc(getDailyLabel(now))}</span>
     </div>
     <article class="cod__card" style="--cod-accent:${esc(cafe.accentColor)}">
       <div class="cod__art">
         <span class="cod__mono">${esc(getInitials(cafe.name))}</span>
-        <span class="cod__art-area">${esc(cafe.area)}</span>
+        <span class="cod__art-area">${esc(cafe.city)}</span>
       </div>
       <div class="cod__body">
         <div class="cod__row">
-          <span class="cod__area">${esc(cafe.area)}</span>
+          <span class="cod__area">${esc(cafe.city)} · ${esc(cafe.area)}</span>
           <span class="cc__status${status.open ? ' is-open' : ''}"><i></i>${esc(status.label)}</span>
         </div>
         <h3 class="cod__name">${esc(cafe.name)}</h3>
         <p class="cod__tag">${esc(cafe.tagline)}</p>
         <div class="cod__facts">
-          <span><b>★ ${esc(cafe.rating.toFixed(1))}</b> ${esc(formatReviewCount(cafe.reviewCount))} review</span>
+          <span><b>★ ${esc(cafe.rating.toFixed(1))}</b> ${esc(formatReviewCount(cafe.reviewCount))} ulasan</span>
           <span>${esc(PRICE_LEVEL_SHORT[cafe.priceLevel])}</span>
           <span>${esc(hours)}</span>
         </div>
@@ -149,7 +149,7 @@ function renderCafeOfTheDay(container: HTMLElement): void {
 
 interface CatalogState {
   query: string;
-  area: AreaFilter;
+  city: CityFilter;
   vibes: Vibe[];
   facilities: Facility[];
   priceLevels: PriceLevel[];
@@ -158,7 +158,7 @@ interface CatalogState {
 
 const catalogState: CatalogState = {
   query: '',
-  area: ALL_AREAS,
+  city: SEMUA_KOTA,
   vibes: [],
   facilities: [],
   priceLevels: [],
@@ -174,14 +174,14 @@ function chip(value: string, group: string, label: string): string {
 }
 
 function buildCatalogChips(catalog: HTMLElement): void {
-  const area = catalog.querySelector<HTMLElement>('[data-filter-area]');
+  const city = catalog.querySelector<HTMLElement>('[data-filter-city]');
   const vibes = catalog.querySelector<HTMLElement>('[data-filter-vibes]');
   const facilities = catalog.querySelector<HTMLElement>('[data-filter-facilities]');
   const prices = catalog.querySelector<HTMLElement>('[data-filter-price]');
   const open = catalog.querySelector<HTMLElement>('[data-filter-open]');
 
-  if (area) {
-    area.innerHTML = [ALL_AREAS, ...PONTIANAK_AREAS].map((value) => chip(value, 'area', value)).join('');
+  if (city) {
+    city.innerHTML = [SEMUA_KOTA, ...CITIES].map((value) => chip(value, 'city', value)).join('');
   }
   if (vibes) {
     vibes.innerHTML = VIBES.map((value) => chip(value, 'vibe', value)).join('');
@@ -205,7 +205,7 @@ function syncCatalogChips(catalog: HTMLElement): void {
     const value = button.dataset.filterValue ?? '';
     let pressed = false;
 
-    if (group === 'area') pressed = catalogState.area === value;
+    if (group === 'city') pressed = catalogState.city === value;
     else if (group === 'vibe') pressed = catalogState.vibes.includes(value as Vibe);
     else if (group === 'facility') pressed = catalogState.facilities.includes(value as Facility);
     else if (group === 'price') pressed = catalogState.priceLevels.includes(Number(value) as PriceLevel);
@@ -218,7 +218,7 @@ function syncCatalogChips(catalog: HTMLElement): void {
 function hasActiveFilters(): boolean {
   return (
     catalogState.query.trim().length > 0 ||
-    catalogState.area !== ALL_AREAS ||
+    catalogState.city !== SEMUA_KOTA ||
     catalogState.vibes.length > 0 ||
     catalogState.facilities.length > 0 ||
     catalogState.priceLevels.length > 0 ||
@@ -237,7 +237,7 @@ function renderCafeCard(cafe: Cafe, now: Date): string {
       <div class="cc__media">
         <span class="cc__mono">${esc(getInitials(cafe.name))}</span>
         <div class="cc__media-top">
-          <span class="cc__area">${esc(cafe.area)}</span>
+          <span class="cc__area">${esc(cafe.city)} · ${esc(cafe.area)}</span>
           ${statusMarkup(cafe, now)}
         </div>
       </div>
@@ -246,14 +246,14 @@ function renderCafeCard(cafe: Cafe, now: Date): string {
         <p class="cc__tag">${esc(cafe.tagline)}</p>
         <div class="cc__meta">
           <span>★ ${esc(cafe.rating.toFixed(1))}</span>
-          <span>${esc(formatReviewCount(cafe.reviewCount))} review</span>
+          <span>${esc(formatReviewCount(cafe.reviewCount))} ulasan</span>
           <span>${esc(PRICE_LEVEL_SHORT[cafe.priceLevel])}</span>
           <span>${esc(formatHours(cafe))}</span>
         </div>
         <div class="cc__tags">${tags.map((tag) => `<span>${esc(tag)}</span>`).join('')}</div>
         <div class="cc__actions">
           <a class="cc__cta" href="${esc(cafe.mapsUrl)}" target="_blank" rel="noopener">${ICONS.pin}Rute ke sana</a>
-          ${saveButton(cafe, { className: 'cc__icon', idle: 'Wishlist', active: 'Tersimpan' })}
+          ${saveButton(cafe, { className: 'cc__icon', idle: 'Simpan', active: 'Tersimpan' })}
           ${visitedButton(cafe, { className: 'cc__icon', idle: 'Tandai', active: 'Dikunjungi' })}
         </div>
         <details class="cc__more">
@@ -271,7 +271,7 @@ function renderCatalog(catalog: HTMLElement): void {
   const now = new Date();
   const results = filterCafes(CAFES_DATA, {
     query: catalogState.query,
-    area: catalogState.area,
+    city: catalogState.city,
     vibes: catalogState.vibes,
     facilities: catalogState.facilities,
     priceLevels: catalogState.priceLevels,
@@ -291,7 +291,7 @@ function renderCatalog(catalog: HTMLElement): void {
     grid.hidden = results.length === 0;
   }
   if (count) {
-    count.innerHTML = `<b>${results.length}</b> dari ${CAFES_DATA.length} cafe`;
+    count.innerHTML = `<b>${results.length}</b> dari ${CAFES_DATA.length} kafe`;
   }
   if (empty) empty.hidden = results.length > 0;
   if (reset) reset.disabled = !hasActiveFilters();
@@ -301,7 +301,7 @@ function handleFilterClick(button: HTMLButtonElement, catalog: HTMLElement): voi
   const group = button.dataset.filterGroup;
   const value = button.dataset.filterValue ?? '';
 
-  if (group === 'area') catalogState.area = value as AreaFilter;
+  if (group === 'city') catalogState.city = value as CityFilter;
   else if (group === 'vibe') catalogState.vibes = toggleValue(catalogState.vibes, value as Vibe);
   else if (group === 'facility') {
     catalogState.facilities = toggleValue(catalogState.facilities, value as Facility);
@@ -314,7 +314,7 @@ function handleFilterClick(button: HTMLButtonElement, catalog: HTMLElement): voi
 
 function resetCatalog(catalog: HTMLElement): void {
   catalogState.query = '';
-  catalogState.area = ALL_AREAS;
+  catalogState.city = SEMUA_KOTA;
   catalogState.vibes = [];
   catalogState.facilities = [];
   catalogState.priceLevels = [];
@@ -344,7 +344,7 @@ function renderPickerHint(picker: HTMLElement): void {
 
   const total = pickerPool().length;
   const label = pickerVibe ? `suasana ${pickerVibe}` : 'semua suasana';
-  out.innerHTML = `<div class="picker__hint">Ada <b>${total}</b> cafe untuk ${esc(label)}. Tekan tombol di atas, biar Nongki yang memilih.</div>`;
+  out.innerHTML = `<div class="picker__hint">Ada <b>${total}</b> kafe untuk ${esc(label)}. Tekan tombol di atas, biar Nongki yang memilih.</div>`;
 }
 
 function renderPickerQuick(picker: HTMLElement): void {
@@ -364,20 +364,20 @@ function renderPickerCard(cafe: Cafe, now: Date): string {
     <article class="rcard" style="--cc-accent:${esc(cafe.accentColor)}">
       <span class="rcard__stamp">Pilihanmu</span>
       <div class="rcard__top">
-        <span class="rcard__area">${esc(cafe.area)}</span>
+        <span class="rcard__area">${esc(cafe.city)} · ${esc(cafe.area)}</span>
         <span class="cc__status${status.open ? ' is-open' : ''}"><i></i>${esc(status.label)}</span>
       </div>
       <h3 class="rcard__name">${esc(cafe.name)}</h3>
       <p class="rcard__tag">${esc(cafe.tagline)}</p>
       <div class="rcard__meta">
         <span>★ ${esc(cafe.rating.toFixed(1))}</span>
-        <span>${esc(formatReviewCount(cafe.reviewCount))} review</span>
+        <span>${esc(formatReviewCount(cafe.reviewCount))} ulasan</span>
         <span>${esc(PRICE_LEVEL_SHORT[cafe.priceLevel])}</span>
         <span>${esc(formatHours(cafe))}</span>
       </div>
       <p class="rcard__best"><b>Cocok untuk</b><br>${esc(cafe.bestFor)}</p>
       <div class="rcard__actions">
-        <a href="${esc(cafe.mapsUrl)}" target="_blank" rel="noopener">${ICONS.pin}Buka Maps</a>
+        <a href="${esc(cafe.mapsUrl)}" target="_blank" rel="noopener">${ICONS.pin}Buka Peta</a>
         ${saveButton(cafe, { className: 'rcard__save', idle: 'Simpan', active: 'Tersimpan' })}
       </div>
     </article>
@@ -475,9 +475,9 @@ function emptyBucketMarkup(tab: BucketTab): string {
   return `
     <div class="bucket__empty">
       <span class="bucket__empty-mark" aria-hidden="true">${wishlist ? '☆' : '✓'}</span>
-      <b>${wishlist ? 'Belum ada rencana' : 'Belum ada kunjungan'}</b>
-      <p>${wishlist ? 'Tekan tombol Wishlist di kartu cafe untuk menyusun daftar nongki berikutnya.' : 'Tandai cafe yang sudah kamu datangi supaya koleksi nongki-mu makin lengkap.'}</p>
-      <a href="#direktori" data-bucket-close>Cari cafe${ICONS.pin}</a>
+      <b>${wishlist ? 'Belum ada rencana nongki' : 'Belum ada kunjungan'}</b>
+      <p>${wishlist ? 'Tekan tombol Simpan di kartu kafe untuk menyusun daftar nongki berikutnya.' : 'Tandai kafe yang sudah kamu datangi supaya koleksi nongki-mu makin lengkap.'}</p>
+      <a href="#direktori" data-bucket-close>Cari kafe${ICONS.pin}</a>
     </div>
   `;
 }
@@ -491,9 +491,9 @@ function bucketItemMarkup(cafe: Cafe, tab: BucketTab, now: Date): string {
       <div class="bitem__art" aria-hidden="true">${esc(getInitials(cafe.name))}</div>
       <div class="bitem__body">
         <h3 class="bitem__name">${esc(cafe.name)}</h3>
-        <div class="bitem__meta">${esc(cafe.area)} · ${esc(PRICE_LEVEL_SHORT[cafe.priceLevel])} · ${status.open ? 'buka sekarang' : 'sedang tutup'}</div>
+        <div class="bitem__meta">${esc(cafe.city)} · ${esc(cafe.area)} · ${esc(PRICE_LEVEL_SHORT[cafe.priceLevel])} · ${status.open ? 'buka sekarang' : 'sedang tutup'}</div>
         <div class="bitem__actions">
-          <a href="${esc(cafe.mapsUrl)}" target="_blank" rel="noopener">Maps</a>
+          <a href="${esc(cafe.mapsUrl)}" target="_blank" rel="noopener">Peta</a>
           <button type="button" data-bucket-move="${esc(cafe.id)}" data-bucket-target="${isWish ? 'visited' : 'wishlist'}">${isWish ? 'Sudah ke sana' : 'Simpan lagi'}</button>
           <button type="button" class="bitem__remove" data-bucket-remove="${esc(cafe.id)}">Hapus</button>
         </div>
@@ -545,9 +545,9 @@ function syncBucketControls(): void {
     const on = isWishlisted(id);
     button.classList.toggle('is-on', on);
     button.setAttribute('aria-pressed', String(on));
-    button.setAttribute('aria-label', on ? 'Hapus dari wishlist' : 'Simpan ke wishlist');
+    button.setAttribute('aria-label', on ? 'Hapus dari daftar simpan' : 'Simpan ke daftar simpan');
     const label = button.querySelector('[data-save-label]');
-    if (label) label.textContent = on ? (button.dataset.labelActive ?? 'Tersimpan') : (button.dataset.labelIdle ?? 'Wishlist');
+    if (label) label.textContent = on ? (button.dataset.labelActive ?? 'Tersimpan') : (button.dataset.labelIdle ?? 'Simpan');
   });
 
   document.querySelectorAll<HTMLButtonElement>('[data-cafe-visited]').forEach((button) => {
@@ -577,7 +577,7 @@ function initCafeUi(): void {
   if (cod) {
     renderCafeOfTheDay(cod);
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible' && getPontianakDateKey() !== codDateKey) {
+      if (document.visibilityState === 'visible' && getLocalDateKey() !== codDateKey) {
         renderCafeOfTheDay(cod);
       }
     });
