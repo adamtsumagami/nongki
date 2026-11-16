@@ -464,13 +464,11 @@
      loaded before theme.js in theme.liquid) and initializes it the same way.
      Lenis eases the native scroll position, so position:sticky (the timeline,
      the pillars) and the browser-owned scrollbar keep working, and touch
-     input stays native. Containers marked data-lenis-prevent (cart drawer,
-     menu, modals) scroll natively; it stands down in the theme editor and
-     under prefers-reduced-motion. */
+     input stays native. Containers marked data-lenis-prevent (menu,
+     modals) scroll natively; it stands down under prefers-reduced-motion. */
   var smoothStarted = false;
   function initSmoothScroll() {
     if (smoothStarted) return; smoothStarted = true;
-    if (!(window.AC && window.AC.smoothScroll)) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     // touch screens scroll natively: Lenis never eases touch, and running it
     // there only added a second scroll loop beside iOS Safari's own momentum

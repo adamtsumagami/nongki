@@ -1405,12 +1405,6 @@ body.bucket-open {
   }
 }
 
-/* Cart Shopify lama belum dipakai lagi. */
-.cart-drawer,
-.cart-drawer__overlay {
-  display: none !important;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .h2 .rcard,
   .bucket__panel,
