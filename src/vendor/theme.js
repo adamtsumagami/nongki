@@ -132,6 +132,10 @@
         navFollowOff();
         unlockScroll();
         document.body.dataset.menuStatus = 'closed';
+        document.querySelectorAll('[data-menu-toggle]').forEach(function (btn) {
+          btn.setAttribute('aria-expanded', 'false');
+          btn.setAttribute('aria-label', 'Buka menu');
+        });
       });
     });
   }
@@ -207,9 +211,9 @@
           var abs = Math.abs(d);
           bag.dataset.slot = Math.max(-2, Math.min(2, d));
           bag.style.zIndex = 10 - abs;
-          // only the centre bag navigates, so only it advertises "Learn More"
+          // only the centre bag navigates, so only it advertises "Lihat Kafe"
           if (d === 0) {
-            bag.setAttribute('data-pop', 'Learn More');
+            bag.setAttribute('data-pop', 'Lihat Kafe');
             bag.setAttribute('data-pop-bg', '#f0ede8');
             bag.setAttribute('data-pop-fg', '#1a1a1a');
           } else {
@@ -234,11 +238,16 @@
         var bag = e.target.closest('[data-ufo-bag]');
         if (bag) {
           var i = Array.prototype.indexOf.call(bags, bag);
-          if (i === idx) { window.location.href = slides[i].url; }
-          else { idx = i; apply(); }
+          if (i === idx) { if (!bag.hasAttribute('data-select-city') && slides[i].url && slides[i].url.charAt(0) === '#') { var target = document.querySelector(slides[i].url); if (target) target.scrollIntoView({ behavior: 'smooth' }); } }
+          else { e.stopPropagation(); idx = i; apply(); }
         }
       });
       apply();
+      sec.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        var bag = e.target.closest('[data-ufo-bag]');
+        if (bag) { e.preventDefault(); bag.click(); }
+      });
       // centre-bag float: a JS sine riding inside the slot transform (via
       // --ufo-float), like the mockup — a CSS keyframe would stomp the
       // slot transition and make rotations snap.
@@ -824,12 +833,12 @@
 
       function caption(k) {
         var it = items[k];
-        if (elRank) { elRank.textContent = '#' + (k + 1); elRank.setAttribute('aria-label', 'Nomor ' + (k + 1) + ' terlaris'); }
+        if (elRank) { elRank.textContent = '#' + (k + 1); elRank.setAttribute('aria-label', 'Kota urutan ' + (k + 1)); }
         if (elName) elName.textContent = it.dataset.name || '';
         if (elMeta) elMeta.textContent = it.dataset.meta || '';
         if (elTrend) { elTrend.hidden = !it.dataset.trend; elTrend.textContent = it.dataset.trend ? '▲ ' + it.dataset.trend + ' · ' : ''; }
         if (elPrice) elPrice.textContent = it.dataset.price || '';
-        if (elLink) elLink.href = it.getAttribute('href');
+        if (elLink) { elLink.href = it.getAttribute('href'); if (it.dataset.selectCity) elLink.dataset.selectCity = it.dataset.selectCity; else delete elLink.dataset.selectCity; }
         root.dispatchEvent(new CustomEvent('susan:front', { bubbles: true, detail: { index: k } }));
       }
       function render() {
@@ -906,11 +915,13 @@
 
       items.forEach(function (el, k) {
         el.addEventListener('click', function (e) {
-          if (dragged) { e.preventDefault(); dragged = false; return; }
-          if (k !== front) { e.preventDefault(); goTo(k); }
+          if (dragged) { e.preventDefault(); e.stopPropagation(); dragged = false; return; }
+          if (k !== front) { e.preventDefault(); e.stopPropagation(); goTo(k); }
         });
       });
-      if (elLink) elLink.addEventListener('click', function (e) { bagTransition(e, items[front]); });
+      if (elLink) elLink.addEventListener('click', function (e) {
+        if (typeof bagTransition === 'function') bagTransition(e, items[front]);
+      });
       var prev = root.querySelector('[data-susan-prev]'), next = root.querySelector('[data-susan-next]');
       if (prev) prev.addEventListener('click', function () { userSpin(Math.round(pos) - 1); });
       if (next) next.addEventListener('click', function () { userSpin(Math.round(pos) + 1); });

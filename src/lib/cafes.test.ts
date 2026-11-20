@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { CAFES_DATA, type Cafe } from '../data/cafes';
 import {
   SEMUA_KOTA,
+  buildCafeShareUrl,
   filterCafes,
+  formatBucketlistShareText,
+  formatCafeShareText,
   formatHours,
   getCafeOfTheDay,
   getInitials,
@@ -10,7 +13,10 @@ import {
   getLocalMinutes,
   getOpenStatus,
   isOpenAt,
+  parseCatalogSearchParams,
   pickRandomCafe,
+  serializeCatalogSearchParams,
+  sortCafes,
 } from './cafes';
 
 /** 14 Nov 2026, 10:00 WIB / 11:00 WITA. */
@@ -187,5 +193,107 @@ describe('utilitas tampilan', () => {
     expect(getInitials('Warkop Senja Pagi')).toBe('WS');
     expect(getInitials('Canopy')).toBe('CA');
     expect(getInitials('Kopi Bersama Kita')).toBe('KB');
+  });
+});
+
+describe('urutkan katalog', () => {
+  it('mengurutkan berdasarkan buka dulu, rating tertinggi, harga termurah, dan nama A-Z', () => {
+    const sample = CAFES_DATA.slice(0, 8);
+    const snapshot = sample.map((cafe) => cafe.id);
+
+    const byDefault = sortCafes(sample, 'default', AT_23_WIB);
+    expect(byDefault.map((c) => c.id)).toEqual(snapshot);
+
+    const byOpen = sortCafes(sample, 'open', AT_23_WIB);
+    const firstClosedIndex = byOpen.findIndex((c) => !isOpenAt(c, AT_23_WIB));
+    if (firstClosedIndex > -1) {
+      expect(byOpen.slice(0, firstClosedIndex).every((c) => isOpenAt(c, AT_23_WIB))).toBe(true);
+      expect(byOpen.slice(firstClosedIndex).every((c) => !isOpenAt(c, AT_23_WIB))).toBe(true);
+    }
+
+    const byRating = sortCafes(sample, 'rating');
+    for (let i = 1; i < byRating.length; i++) {
+      expect(byRating[i - 1].rating).toBeGreaterThanOrEqual(byRating[i].rating);
+    }
+
+    const byPrice = sortCafes(sample, 'price-asc');
+    for (let i = 1; i < byPrice.length; i++) {
+      expect(byPrice[i - 1].priceLevel).toBeLessThanOrEqual(byPrice[i].priceLevel);
+    }
+
+    const byName = sortCafes(sample, 'name');
+    for (let i = 1; i < byName.length; i++) {
+      expect(byName[i - 1].name.localeCompare(byName[i].name, 'id')).toBeLessThanOrEqual(0);
+    }
+  });
+});
+
+describe('sinkronisasi query URL', () => {
+  it('mem-parse dan menyerialisasi filter valid secara konsisten', () => {
+    const search = serializeCatalogSearchParams({
+      query: 'kopi',
+      city: 'Pontianak',
+      vibes: ['Ramah Kerja', 'Estetik'],
+      facilities: ['Wi-Fi'],
+      priceLevels: [1, 2],
+      openNow: true,
+      sort: 'rating',
+    });
+
+    const parsed = parseCatalogSearchParams(search);
+    expect(parsed).toEqual({
+      query: 'kopi',
+      city: 'Pontianak',
+      vibes: ['Ramah Kerja', 'Estetik'],
+      facilities: ['Wi-Fi'],
+      priceLevels: [1, 2],
+      openNow: true,
+      sort: 'rating',
+    });
+  });
+
+  it('mengabaikan nilai tidak dikenal dan memangkas query panjang', () => {
+    const longQuery = 'a'.repeat(150);
+    const parsed = parseCatalogSearchParams(
+      `?q=${longQuery}&kota=Atlantis&suasana=Ramah+Kerja,Invalid,Ramah+Kerja&fasilitas=Bogus&harga=99,2,2&buka=yes&urut=hack`,
+    );
+
+    expect(parsed.query).toHaveLength(100);
+    expect(parsed.city).toBe(SEMUA_KOTA);
+    expect(parsed.vibes).toEqual(['Ramah Kerja']);
+    expect(parsed.facilities).toEqual([]);
+    expect(parsed.priceLevels).toEqual([2]);
+    expect(parsed.openNow).toBe(false);
+    expect(parsed.sort).toBe('default');
+    expect(serializeCatalogSearchParams({ city: SEMUA_KOTA, sort: 'default' })).toBe('');
+  });
+});
+
+describe('berbagi kafe & daftar simpan', () => {
+  it('membentuk URL berbagi yang terfilter dan menolak skema non-http', () => {
+    const cafe = CAFES_DATA[0];
+    const url = buildCafeShareUrl(cafe, 'https://nongki.id/?foo=bar#old');
+    expect(url.startsWith('https://nongki.id/?')).toBe(true);
+    expect(url.endsWith('#direktori')).toBe(true);
+    const parsed = parseCatalogSearchParams(new URL(url).search);
+    expect(parsed.city).toBe(cafe.city);
+    expect(parsed.query).toBe(cafe.name);
+
+    const safeFallback = buildCafeShareUrl(cafe, 'javascript:alert(1)');
+    expect(safeFallback.startsWith('https://nongki.id/?')).toBe(true);
+  });
+
+  it('memformat teks berbagi kafe dan daftar simpan', () => {
+    const cafe = CAFES_DATA[0];
+    const url = buildCafeShareUrl(cafe, 'https://nongki.id/');
+    const cafeText = formatCafeShareText(cafe, url);
+    expect(cafeText).toContain(cafe.name);
+    expect(cafeText).toContain(url);
+
+    expect(formatBucketlistShareText([], 'Mau ke sini')).toBe('');
+    const listText = formatBucketlistShareText(CAFES_DATA.slice(0, 2), 'Mau ke sini');
+    expect(listText).toContain('Daftar Nongki — Mau ke sini (2 kafe)');
+    expect(listText).toContain(`1. ${CAFES_DATA[0].name}`);
+    expect(listText).toContain(`2. ${CAFES_DATA[1].name}`);
   });
 });

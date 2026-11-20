@@ -1,6 +1,11 @@
 import {
+  CITIES,
   CITY_INFO,
+  FACILITIES,
+  PRICE_LEVELS,
+  PRICE_LEVEL_SHORT,
   TIME_ZONE_LABELS,
+  VIBES,
   type Cafe,
   type City,
   type Facility,
@@ -197,6 +202,146 @@ export function pickRandomCafe(
 
   const roll = Math.min(0.999999, Math.max(0, options.random?.() ?? Math.random()));
   return pool[Math.floor(roll * pool.length)];
+}
+
+export const CAFE_SORTS = ['default', 'open', 'rating', 'price-asc', 'name'] as const;
+
+export type CafeSort = (typeof CAFE_SORTS)[number];
+
+export interface CatalogQueryState {
+  query: string;
+  city: CityFilter;
+  vibes: Vibe[];
+  facilities: Facility[];
+  priceLevels: PriceLevel[];
+  openNow: boolean;
+  sort: CafeSort;
+}
+
+const CITY_SET = new Set<string>(CITIES);
+const VIBE_SET = new Set<string>(VIBES);
+const FACILITY_SET = new Set<string>(FACILITIES);
+const PRICE_SET = new Set<number>(PRICE_LEVELS);
+const SORT_SET = new Set<string>(CAFE_SORTS);
+
+function parseAllowlistedList<T extends string>(raw: string | null, allowlist: Set<string>): T[] {
+  if (!raw) return [];
+  const seen = new Set<T>();
+  for (const part of raw.split(',')) {
+    const value = part.trim() as T;
+    if (allowlist.has(value)) seen.add(value);
+  }
+  return Array.from(seen);
+}
+
+function parsePriceLevels(raw: string | null): PriceLevel[] {
+  if (!raw) return [];
+  const seen = new Set<PriceLevel>();
+  for (const part of raw.split(',')) {
+    const num = Number(part.trim());
+    if (Number.isInteger(num) && PRICE_SET.has(num)) seen.add(num as PriceLevel);
+  }
+  return Array.from(seen);
+}
+
+/** Returns a sorted copy of the cafe list without mutating the input array. */
+export function sortCafes(cafes: Cafe[], sortBy: CafeSort, now: Date = new Date()): Cafe[] {
+  const list = [...cafes];
+  if (sortBy === 'default') return list;
+
+  return list.sort((a, b) => {
+    if (sortBy === 'open') {
+      return (
+        Number(isOpenAt(b, now)) - Number(isOpenAt(a, now)) ||
+        b.rating - a.rating ||
+        a.name.localeCompare(b.name, 'id')
+      );
+    }
+    if (sortBy === 'rating') {
+      return (
+        b.rating - a.rating ||
+        b.reviewCount - a.reviewCount ||
+        a.name.localeCompare(b.name, 'id')
+      );
+    }
+    if (sortBy === 'price-asc') {
+      return (
+        a.priceLevel - b.priceLevel ||
+        b.rating - a.rating ||
+        a.name.localeCompare(b.name, 'id')
+      );
+    }
+    return a.name.localeCompare(b.name, 'id');
+  });
+}
+
+/** Parses and allowlist-validates directory filters from a URL query string. */
+export function parseCatalogSearchParams(search: string): CatalogQueryState {
+  const params = new URLSearchParams(search);
+  const rawCity = params.get('kota')?.trim() ?? '';
+  const rawSort = params.get('urut')?.trim() ?? '';
+
+  return {
+    query: (params.get('q') ?? '').trim().slice(0, 100),
+    city: CITY_SET.has(rawCity) ? (rawCity as City) : SEMUA_KOTA,
+    vibes: parseAllowlistedList<Vibe>(params.get('suasana'), VIBE_SET),
+    facilities: parseAllowlistedList<Facility>(params.get('fasilitas'), FACILITY_SET),
+    priceLevels: parsePriceLevels(params.get('harga')),
+    openNow: params.get('buka') === '1',
+    sort: SORT_SET.has(rawSort) ? (rawSort as CafeSort) : 'default',
+  };
+}
+
+/** Serializes active directory filters into a compact query string, omitting defaults. */
+export function serializeCatalogSearchParams(state: Partial<CatalogQueryState>): string {
+  const params = new URLSearchParams();
+  const query = state.query?.trim().slice(0, 100) ?? '';
+  if (query) params.set('q', query);
+  if (state.city && state.city !== SEMUA_KOTA) params.set('kota', state.city);
+  if (state.vibes && state.vibes.length > 0) params.set('suasana', state.vibes.join(','));
+  if (state.facilities && state.facilities.length > 0) {
+    params.set('fasilitas', state.facilities.join(','));
+  }
+  if (state.priceLevels && state.priceLevels.length > 0) {
+    params.set('harga', state.priceLevels.join(','));
+  }
+  if (state.openNow) params.set('buka', '1');
+  if (state.sort && state.sort !== 'default') params.set('urut', state.sort);
+
+  const encoded = params.toString();
+  return encoded ? `?${encoded}` : '';
+}
+
+/** Builds a shareable directory URL filtered to the given cafe. */
+export function buildCafeShareUrl(cafe: Cafe, currentUrl: string): string {
+  let parsed: URL;
+  try {
+    const candidate = new URL(currentUrl);
+    if (candidate.protocol !== 'http:' && candidate.protocol !== 'https:') {
+      parsed = new URL('https://nongki.id/');
+    } else {
+      parsed = new URL(`${candidate.origin}${candidate.pathname}`);
+    }
+  } catch {
+    parsed = new URL('https://nongki.id/');
+  }
+
+  parsed.search = serializeCatalogSearchParams({ city: cafe.city, query: cafe.name });
+  parsed.hash = '#direktori';
+  return parsed.toString();
+}
+
+export function formatCafeShareText(cafe: Cafe, shareUrl: string): string {
+  return `${cafe.name} (${cafe.city} · ${cafe.area}) — ${formatHours(cafe)}\n${shareUrl}`;
+}
+
+export function formatBucketlistShareText(cafes: Cafe[], tabLabel: string): string {
+  if (cafes.length === 0) return '';
+  const lines = cafes.map(
+    (cafe, i) =>
+      `${i + 1}. ${cafe.name} (${cafe.city} · ${cafe.area}, ${PRICE_LEVEL_SHORT[cafe.priceLevel]}, ${formatHours(cafe)}) — ${cafe.mapsUrl}`,
+  );
+  return `Daftar Nongki — ${tabLabel} (${cafes.length} kafe)\n${lines.join('\n')}`;
 }
 
 export function getCafeById(cafes: Cafe[], id: string): Cafe | undefined {
