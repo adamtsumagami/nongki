@@ -55,6 +55,12 @@ import {
   toggleBucketWishlist,
   type BucketTab,
 } from '../lib/bucketlist';
+import {
+  isPickerSoundEnabled,
+  playPickerReveal,
+  playPickerTick,
+  togglePickerSound,
+} from '../lib/sound';
 
 const HTML_ENTITIES: Record<string, string> = {
   '&': '&amp;',
@@ -125,6 +131,19 @@ function scrollToSection(target: Element): void {
   if (typeof (target as HTMLElement).scrollIntoView === 'function') {
     (target as HTMLElement).scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   }
+}
+
+const BACK_TO_TOP_THRESHOLD = 420;
+
+function scrollToTop(): void {
+  const lenis = (window as Window & {
+    __lenis?: { scrollTo: (t: Element | number, opts?: { offset?: number; duration?: number }) => void };
+  }).__lenis;
+  if (lenis && typeof lenis.scrollTo === 'function') {
+    lenis.scrollTo(0);
+    return;
+  }
+  window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
 }
 
 let codDateKey = '';
@@ -455,6 +474,26 @@ function renderPickerQuick(picker: HTMLElement): void {
   if (openBtn) {
     openBtn.setAttribute('aria-pressed', String(pickerOpenNow));
   }
+
+  syncPickerSoundButton(picker);
+}
+
+function syncPickerSoundButton(picker: HTMLElement): void {
+  const soundBtn = picker.querySelector<HTMLButtonElement>('[data-picker-sound]');
+  if (!soundBtn) return;
+
+  const enabled = isPickerSoundEnabled();
+  soundBtn.setAttribute('aria-pressed', String(enabled));
+  soundBtn.setAttribute(
+    'aria-label',
+    enabled ? 'Matikan suara pilih acak' : 'Aktifkan suara pilih acak',
+  );
+  soundBtn.classList.toggle('is-muted', !enabled);
+
+  const label = soundBtn.querySelector<HTMLElement>('[data-picker-sound-label]');
+  if (label) {
+    label.textContent = enabled ? 'Suara aktif' : 'Suara mati';
+  }
 }
 
 function renderPickerCard(cafe: Cafe, now: Date): string {
@@ -507,6 +546,7 @@ function spinPicker(picker: HTMLElement): void {
   if (prefersReducedMotion() || pool.length === 1) {
     out.innerHTML = renderPickerCard(result, new Date());
     syncBucketControls();
+    playPickerReveal();
     return;
   }
 
@@ -521,6 +561,7 @@ function spinPicker(picker: HTMLElement): void {
     if (tick < tickCount) {
       const sample = pool[(tick * 3 + Math.floor(Math.random() * pool.length)) % pool.length];
       out.innerHTML = `<div class="picker__rolling">${esc(sample.name)}</div>`;
+      playPickerTick(tick, tickCount);
       pickerTimer = window.setTimeout(step, 55 + tick * 12);
       return;
     }
@@ -528,6 +569,7 @@ function spinPicker(picker: HTMLElement): void {
     out.innerHTML = renderPickerCard(result, new Date());
     if (button) button.disabled = false;
     syncBucketControls();
+    playPickerReveal();
   };
 
   step();
@@ -802,9 +844,21 @@ function initCafeUi(): void {
     renderPickerHint(picker);
   }
 
+  const backToTop = document.querySelector<HTMLButtonElement>('[data-back-to-top]');
+  const updateBackToTop = (): void => {
+    if (backToTop) backToTop.hidden = window.scrollY < BACK_TO_TOP_THRESHOLD;
+  };
+  updateBackToTop();
+  window.addEventListener('scroll', updateBackToTop, { passive: true });
+
   document.addEventListener('click', (event) => {
     const target = event.target;
     if (!(target instanceof Element)) return;
+
+    if (target.closest('[data-back-to-top]')) {
+      scrollToTop();
+      return;
+    }
 
     const openButton = target.closest<HTMLElement>('[data-bucket-toggle], [data-bucket-open]');
     if (openButton) {
@@ -919,6 +973,13 @@ function initCafeUi(): void {
       pickerVibe = pickerVibe === value ? null : (value as Vibe);
       renderPickerQuick(picker);
       renderPickerHint(picker);
+      return;
+    }
+
+    if (target.closest('[data-picker-sound]') && picker) {
+      const enabled = togglePickerSound();
+      syncPickerSoundButton(picker);
+      if (enabled) playPickerTick(4, 8);
       return;
     }
 

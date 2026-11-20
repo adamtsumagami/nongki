@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import rawHtml from '../index.html?raw';
+import { resetSoundStateForTest, setPickerSoundEnabled } from './lib/sound';
 import themeSource from './vendor/theme.js?raw';
 import homeMSource from './vendor/home-m.js?raw';
 
@@ -328,6 +329,100 @@ describe('Nongki Platform', () => {
       toast.hidden = true;
       if (originalClipboard) Object.defineProperty(navigator, 'clipboard', originalClipboard);
       else delete (navigator as unknown as Record<string, unknown>).clipboard;
+    }
+  });
+
+  it('shows back-to-top button after scrolling and scrolls back up on click', () => {
+    const backToTop = document.querySelector<HTMLButtonElement>('[data-back-to-top]')!;
+    const originalScrollY = Object.getOwnPropertyDescriptor(window, 'scrollY');
+    const scrollToSpy = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+
+    expect(backToTop).not.toBeNull();
+    expect(backToTop.hidden).toBe(true);
+
+    try {
+      Object.defineProperty(window, 'scrollY', { configurable: true, value: 480 });
+      window.dispatchEvent(new Event('scroll'));
+      expect(backToTop.hidden).toBe(false);
+
+      backToTop.click();
+      expect(scrollToSpy).toHaveBeenCalledTimes(1);
+
+      Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+      window.dispatchEvent(new Event('scroll'));
+      expect(backToTop.hidden).toBe(true);
+    } finally {
+      scrollToSpy.mockRestore();
+      if (originalScrollY) Object.defineProperty(window, 'scrollY', originalScrollY);
+      else delete (window as unknown as Record<string, unknown>).scrollY;
+      window.dispatchEvent(new Event('scroll'));
+    }
+  });
+
+  it('toggles picker sound preference and plays sound cues only when enabled', () => {
+    const originalAudioContext = Object.getOwnPropertyDescriptor(window, 'AudioContext');
+    const soundBtn = document.querySelector<HTMLButtonElement>('[data-picker-sound]')!;
+    const soundLabel = soundBtn.querySelector<HTMLElement>('[data-picker-sound-label]')!;
+    const spinBtn = document.querySelector<HTMLButtonElement>('[data-picker-spin]')!;
+    const startMock = vi.fn();
+
+    try {
+      resetSoundStateForTest();
+      setPickerSoundEnabled(true);
+      const mockCtx = {
+        currentTime: 0,
+        state: 'running',
+        destination: {},
+        resume: vi.fn().mockResolvedValue(undefined),
+        createOscillator: vi.fn(() => ({
+          type: 'sine',
+          frequency: { setValueAtTime: vi.fn() },
+          start: startMock,
+          stop: vi.fn(),
+          connect: vi.fn(),
+          disconnect: vi.fn(),
+          onended: null,
+        })),
+        createGain: vi.fn(() => ({
+          gain: {
+            setValueAtTime: vi.fn(),
+            linearRampToValueAtTime: vi.fn(),
+            exponentialRampToValueAtTime: vi.fn(),
+          },
+          connect: vi.fn(),
+          disconnect: vi.fn(),
+        })),
+      };
+      const AudioCtor = vi.fn(function mockAudio() {
+        return mockCtx;
+      });
+      Object.defineProperty(window, 'AudioContext', { configurable: true, value: AudioCtor });
+
+      expect(soundBtn.getAttribute('aria-pressed')).toBe('true');
+      expect(soundLabel.textContent).toBe('Suara aktif');
+
+      spinBtn.click();
+      expect(startMock).toHaveBeenCalledTimes(3);
+
+      soundBtn.click();
+      expect(soundBtn.getAttribute('aria-pressed')).toBe('false');
+      expect(soundLabel.textContent).toBe('Suara mati');
+
+      spinBtn.click();
+      expect(startMock).toHaveBeenCalledTimes(3);
+
+      soundBtn.click();
+      expect(soundBtn.getAttribute('aria-pressed')).toBe('true');
+      expect(soundLabel.textContent).toBe('Suara aktif');
+      expect(startMock).toHaveBeenCalledTimes(4);
+    } finally {
+      setPickerSoundEnabled(true);
+      resetSoundStateForTest();
+      if (originalAudioContext) {
+        Object.defineProperty(window, 'AudioContext', originalAudioContext);
+      } else {
+        delete (window as unknown as Record<string, unknown>).AudioContext;
+      }
     }
   });
 
