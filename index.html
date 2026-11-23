@@ -578,10 +578,36 @@
       <div>
         <div class="lbl">Pilih Acak</div>
         <h2 class="ttl">Biar <span class="scr">semesta</span><br>yang pilih.</h2>
-        <p class="txt">Nggak bisa mutusin mau ke mana? Pilih kota, suasana, atau yang sedang buka, tekan tombol, dan biarkan Nongki menentukan spot nongki berikutnya.</p>
+        <p class="txt">Nggak bisa mutusin mau ke mana? Gunakan lokasi perangkat atau atur kota secara manual, pilih suasana, lalu biarkan Nongki menentukan spot nongki berikutnya.</p>
         <div class="picker__group">
-          <div class="picker__label">Kota</div>
-          <div class="picker__quick" data-picker-cities></div>
+          <div class="picker__label">Lokasi</div>
+          <div class="picker__loc-modes" role="group" aria-label="Pilih cara menentukan lokasi">
+            <button class="picker__mode" type="button" data-picker-loc-mode="auto" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7"/></svg>
+              <span>Gunakan lokasimu</span>
+            </button>
+            <button class="picker__mode" type="button" data-picker-loc-mode="manual" aria-pressed="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+              <span>Atur lokasimu</span>
+            </button>
+          </div>
+        </div>
+        <div data-picker-auto-panel hidden>
+          <div class="picker__loc-bar" data-picker-loc-status role="status" aria-live="polite"></div>
+          <div class="picker__group">
+            <div class="picker__label">Jarak maksimal</div>
+            <div class="picker__quick" data-picker-radii></div>
+          </div>
+        </div>
+        <div data-picker-manual-panel>
+          <div class="picker__group">
+            <div class="picker__label">Kota</div>
+            <div class="picker__quick" data-picker-cities></div>
+          </div>
+          <div class="picker__group" data-picker-area-group hidden>
+            <div class="picker__label">Kawasan</div>
+            <div class="picker__quick" data-picker-areas></div>
+          </div>
         </div>
         <div class="picker__group">
           <div class="picker__label">Suasana</div>

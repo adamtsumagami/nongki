@@ -24,16 +24,22 @@ import {
 } from '../data/cafes';
 import {
   CAFE_SORTS,
+  DEFAULT_PICKER_RADIUS_KM,
+  PICKER_RADIUS_OPTIONS,
   SEMUA_KOTA,
   buildCafeShareUrl,
+  distanceKm,
   filterCafes,
+  findNearestCafe,
   formatBucketlistShareText,
   formatCafeShareText,
+  formatDistanceKm,
   formatHours,
   formatReviewCount,
   getCafeById,
   getCafeOfTheDay,
   getDailyLabel,
+  getAreasForCity,
   getInitials,
   getOpenStatus,
   getLocalDateKey,
@@ -43,6 +49,8 @@ import {
   sortCafes,
   type CafeSort,
   type CityFilter,
+  type GeoPoint,
+  type PickerRadiusKm,
 } from '../lib/cafes';
 import {
   getBucketlist,
@@ -418,18 +426,89 @@ function resetCatalog(catalog: HTMLElement): void {
 /* Random picker                                                       */
 /* ------------------------------------------------------------------ */
 
+type PickerLocationMode = 'manual' | 'auto';
+type GeoStatus = 'idle' | 'loading' | 'ready' | 'error';
+
+let pickerLocationMode: PickerLocationMode = 'manual';
 let pickerCity: City | typeof SEMUA_KOTA = SEMUA_KOTA;
+let pickerArea = '';
+let pickerRadiusKm: PickerRadiusKm = DEFAULT_PICKER_RADIUS_KM;
+let pickerGeoOrigin: GeoPoint | null = null;
+let pickerGeoStatus: GeoStatus = 'idle';
+let pickerGeoError = '';
+let pickerGeoReqSeq = 0;
 let pickerVibe: Vibe | null = null;
 let pickerOpenNow = false;
 let lastPickedId: string | undefined;
 let pickerTimer: number | undefined;
 
 function pickerPool(): Cafe[] {
+  if (pickerLocationMode === 'auto') {
+    if (!pickerGeoOrigin) return [];
+    return filterCafes(CAFES_DATA, {
+      near: { origin: pickerGeoOrigin, maxDistanceKm: pickerRadiusKm },
+      vibes: pickerVibe ? [pickerVibe] : [],
+      openNow: pickerOpenNow,
+    });
+  }
+
   return filterCafes(CAFES_DATA, {
     city: pickerCity,
+    area: pickerCity === SEMUA_KOTA ? undefined : pickerArea || undefined,
     vibes: pickerVibe ? [pickerVibe] : [],
     openNow: pickerOpenNow,
   });
+}
+
+function geolocationErrorMessage(code: number | undefined): string {
+  if (code === 1) {
+    return 'Izin lokasi ditolak. Aktifkan izin lokasi di browser atau beralih ke Atur lokasimu.';
+  }
+  if (code === 2) {
+    return 'Lokasi perangkat tidak dapat ditentukan sekarang. Coba lagi atau beralih ke Atur lokasimu.';
+  }
+  if (code === 3) {
+    return 'Permintaan lokasi melebihi batas waktu. Coba lagi atau beralih ke Atur lokasimu.';
+  }
+  return 'Gagal membaca lokasi perangkat. Coba lagi atau beralih ke Atur lokasimu.';
+}
+
+function requestDeviceLocation(picker: HTMLElement): void {
+  pickerGeoReqSeq += 1;
+  const seq = pickerGeoReqSeq;
+
+  if (typeof navigator.geolocation?.getCurrentPosition !== 'function') {
+    pickerGeoStatus = 'error';
+    pickerGeoError =
+      'Perangkat atau browser ini tidak mendukung akses lokasi. Gunakan pilihan Atur lokasimu.';
+    renderPickerQuick(picker);
+    renderPickerHint(picker);
+    return;
+  }
+
+  pickerGeoStatus = 'loading';
+  pickerGeoError = '';
+  renderPickerQuick(picker);
+  renderPickerHint(picker);
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      if (seq !== pickerGeoReqSeq) return;
+      pickerGeoOrigin = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      pickerGeoStatus = 'ready';
+      pickerGeoError = '';
+      renderPickerQuick(picker);
+      renderPickerHint(picker);
+    },
+    (err) => {
+      if (seq !== pickerGeoReqSeq) return;
+      pickerGeoStatus = 'error';
+      pickerGeoError = geolocationErrorMessage(err?.code);
+      renderPickerQuick(picker);
+      renderPickerHint(picker);
+    },
+    { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 },
+  );
 }
 
 function renderPickerHint(picker: HTMLElement): void {
@@ -437,12 +516,57 @@ function renderPickerHint(picker: HTMLElement): void {
   const button = picker.querySelector<HTMLButtonElement>('[data-picker-spin]');
   const total = pickerPool().length;
 
+  const vibeLabel = pickerVibe ? `suasana ${pickerVibe}` : 'semua suasana';
+  const openLabel = pickerOpenNow ? ' · buka sekarang' : '';
+
+  if (pickerLocationMode === 'auto') {
+    if (pickerGeoStatus === 'loading') {
+      if (button) button.disabled = true;
+      if (out) {
+        out.innerHTML =
+          '<div class="picker__hint">Menunggu lokasi perangkat untuk mencari kafe terdekat...</div>';
+      }
+      return;
+    }
+
+    if (pickerGeoStatus === 'error' || !pickerGeoOrigin) {
+      if (button) button.disabled = true;
+      if (out) {
+        out.innerHTML = `<div class="picker__hint">Lokasi perangkat belum tersedia. Coba ambil ulang lokasi di atas atau pilih kota secara manual.<br><button class="picker__hint-btn" type="button" data-picker-switch-manual>Atur lokasimu</button></div>`;
+      }
+      return;
+    }
+
+    if (button) button.disabled = total === 0;
+    if (!out) return;
+
+    if (total === 0) {
+      const nearest = findNearestCafe(CAFES_DATA, pickerGeoOrigin);
+      const nearestNote = nearest
+        ? ` Kafe terdekat di data saat ini berjarak ${formatDistanceKm(nearest.distanceKm)} (${nearest.cafe.city}).`
+        : '';
+      const actionBtn =
+        pickerRadiusKm < 20 && nearest && nearest.distanceKm <= 20
+          ? '<button class="picker__hint-btn" type="button" data-picker-widen-radius="20">Perluas ke 20 km</button>'
+          : '<button class="picker__hint-btn" type="button" data-picker-switch-manual>Atur lokasimu</button>';
+
+      out.innerHTML = `<div class="picker__hint">Belum ada kafe dalam radius <b>${pickerRadiusKm} km</b> (${esc(vibeLabel)}${esc(openLabel)}).${esc(nearestNote)}<br>${actionBtn}</div>`;
+      return;
+    }
+
+    out.innerHTML = `<div class="picker__hint">Ada <b>${total}</b> kafe dalam radius <b>${pickerRadiusKm} km</b> (${esc(vibeLabel)}${esc(openLabel)}). Tekan tombol di atas, biar Nongki yang memilih.</div>`;
+    return;
+  }
+
   if (button) button.disabled = total === 0;
   if (!out) return;
 
-  const cityLabel = pickerCity === SEMUA_KOTA ? 'semua kota' : pickerCity;
-  const vibeLabel = pickerVibe ? `suasana ${pickerVibe}` : 'semua suasana';
-  const openLabel = pickerOpenNow ? ' · buka sekarang' : '';
+  const cityLabel =
+    pickerCity === SEMUA_KOTA
+      ? 'semua kota'
+      : pickerArea
+        ? `${pickerCity} · ${pickerArea}`
+        : pickerCity;
 
   if (total === 0) {
     out.innerHTML = `<div class="picker__hint">Belum ada kafe yang cocok untuk <b>${esc(cityLabel)}</b> (${esc(vibeLabel)}${esc(openLabel)}). Coba ubah atau longgarkan filter.</div>`;
@@ -453,6 +577,53 @@ function renderPickerHint(picker: HTMLElement): void {
 }
 
 function renderPickerQuick(picker: HTMLElement): void {
+  const isLoadingGeo = pickerLocationMode === 'auto' && pickerGeoStatus === 'loading';
+  picker.querySelectorAll<HTMLButtonElement>('[data-picker-loc-mode]').forEach((btn) => {
+    const mode: PickerLocationMode = btn.dataset.pickerLocMode === 'auto' ? 'auto' : 'manual';
+    const pressed = pickerLocationMode === mode;
+    const busy = mode === 'auto' && isLoadingGeo;
+    btn.setAttribute('aria-pressed', String(pressed));
+    btn.disabled = busy;
+    btn.setAttribute('aria-busy', String(busy));
+  });
+
+  const autoPanel = picker.querySelector<HTMLElement>('[data-picker-auto-panel]');
+  const manualPanel = picker.querySelector<HTMLElement>('[data-picker-manual-panel]');
+  if (autoPanel) autoPanel.hidden = pickerLocationMode !== 'auto';
+  if (manualPanel) manualPanel.hidden = pickerLocationMode !== 'manual';
+
+  const radiiHolder = picker.querySelector<HTMLElement>('[data-picker-radii]');
+  if (radiiHolder) {
+    radiiHolder.innerHTML = PICKER_RADIUS_OPTIONS.map((km) => {
+      const pressed = pickerRadiusKm === km;
+      return `<button class="fchip" type="button" data-picker-radius="${km}" aria-pressed="${pressed}">${km} km</button>`;
+    }).join('');
+  }
+
+  const locStatusEl = picker.querySelector<HTMLElement>('[data-picker-loc-status]');
+  if (locStatusEl) {
+    if (pickerGeoStatus === 'loading') {
+      locStatusEl.setAttribute('role', 'status');
+      locStatusEl.classList.remove('is-error');
+      locStatusEl.innerHTML = '<span>Mengambil lokasi perangkat...</span>';
+    } else if (pickerGeoStatus === 'error') {
+      locStatusEl.setAttribute('role', 'alert');
+      locStatusEl.classList.add('is-error');
+      locStatusEl.innerHTML = `<span>${esc(pickerGeoError)}</span><button class="picker__loc-action" type="button" data-picker-loc-retry>Coba lagi</button>`;
+    } else if (pickerGeoStatus === 'ready' && pickerGeoOrigin) {
+      locStatusEl.setAttribute('role', 'status');
+      locStatusEl.classList.remove('is-error');
+      const nearest = findNearestCafe(CAFES_DATA, pickerGeoOrigin);
+      const areaNote =
+        nearest && nearest.distanceKm <= 35 ? ` · sekitar ${nearest.cafe.city}` : '';
+      locStatusEl.innerHTML = `<span>Lokasi aktif${esc(areaNote)} · maks. ${pickerRadiusKm} km</span><button class="picker__loc-action" type="button" data-picker-loc-retry>Perbarui</button>`;
+    } else {
+      locStatusEl.setAttribute('role', 'status');
+      locStatusEl.classList.remove('is-error');
+      locStatusEl.innerHTML = '';
+    }
+  }
+
   const cityHolder = picker.querySelector<HTMLElement>('[data-picker-cities]');
   if (cityHolder) {
     const cityOptions: Array<City | typeof SEMUA_KOTA> = [SEMUA_KOTA, ...CITIES];
@@ -460,6 +631,28 @@ function renderPickerQuick(picker: HTMLElement): void {
       const pressed = pickerCity === city;
       return `<button class="fchip" type="button" data-picker-city="${esc(city)}" aria-pressed="${pressed}">${esc(city)}</button>`;
     }).join('');
+  }
+
+  const areaGroup = picker.querySelector<HTMLElement>('[data-picker-area-group]');
+  const areaHolder = picker.querySelector<HTMLElement>('[data-picker-areas]');
+  if (areaGroup && areaHolder) {
+    if (pickerCity === SEMUA_KOTA) {
+      areaGroup.hidden = true;
+      areaHolder.innerHTML = '';
+    } else {
+      const areas = getAreasForCity(CAFES_DATA, pickerCity);
+      areaGroup.hidden = areas.length === 0;
+      areaHolder.innerHTML =
+        areas.length === 0
+          ? ''
+          : [
+              `<button class="fchip" type="button" data-picker-area="" aria-pressed="${pickerArea === ''}">Semua kawasan</button>`,
+              ...areas.map(
+                (area) =>
+                  `<button class="fchip" type="button" data-picker-area="${esc(area)}" aria-pressed="${pickerArea === area}">${esc(area)}</button>`,
+              ),
+            ].join('');
+    }
   }
 
   const vibeHolder = picker.querySelector<HTMLElement>('[data-picker-vibes]');
@@ -498,6 +691,10 @@ function syncPickerSoundButton(picker: HTMLElement): void {
 
 function renderPickerCard(cafe: Cafe, now: Date): string {
   const status = getOpenStatus(cafe, now);
+  const distMeta =
+    pickerLocationMode === 'auto' && pickerGeoOrigin
+      ? `<span class="rcard__dist">${esc(formatDistanceKm(distanceKm(pickerGeoOrigin, { lat: cafe.lat, lng: cafe.lng })))} dari lokasimu</span>`
+      : '';
 
   return `
     <article class="rcard" style="--cc-accent:${esc(cafe.accentColor)}">
@@ -513,6 +710,7 @@ function renderPickerCard(cafe: Cafe, now: Date): string {
         <span>${esc(formatReviewCount(cafe.reviewCount))} ulasan</span>
         <span>${esc(PRICE_LEVEL_SHORT[cafe.priceLevel])}</span>
         <span>${esc(formatHours(cafe))}</span>
+        ${distMeta}
       </div>
       <p class="rcard__best"><b>Cocok untuk</b><br>${esc(cafe.bestFor)}</p>
       <div class="rcard__actions">
@@ -947,11 +1145,79 @@ function initCafeUi(): void {
       return;
     }
 
+    const pickerLocModeBtn = target.closest<HTMLButtonElement>('[data-picker-loc-mode]');
+    if (pickerLocModeBtn && picker) {
+      const nextMode: PickerLocationMode =
+        pickerLocModeBtn.dataset.pickerLocMode === 'auto' ? 'auto' : 'manual';
+      window.clearTimeout(pickerTimer);
+      pickerLocationMode = nextMode;
+      if (nextMode === 'auto') {
+        if (pickerGeoStatus !== 'ready') {
+          requestDeviceLocation(picker);
+        } else {
+          renderPickerQuick(picker);
+          renderPickerHint(picker);
+        }
+      } else {
+        pickerGeoReqSeq += 1;
+        if (pickerGeoStatus === 'loading') pickerGeoStatus = pickerGeoOrigin ? 'ready' : 'idle';
+        renderPickerQuick(picker);
+        renderPickerHint(picker);
+      }
+      return;
+    }
+
+    if (target.closest('[data-picker-loc-retry]') && picker) {
+      window.clearTimeout(pickerTimer);
+      requestDeviceLocation(picker);
+      return;
+    }
+
+    const pickerRadiusBtn = target.closest<HTMLButtonElement>('[data-picker-radius]');
+    if (pickerRadiusBtn && picker) {
+      const km = Number(pickerRadiusBtn.dataset.pickerRadius);
+      if ((PICKER_RADIUS_OPTIONS as readonly number[]).includes(km)) {
+        window.clearTimeout(pickerTimer);
+        pickerRadiusKm = km as PickerRadiusKm;
+        renderPickerQuick(picker);
+        renderPickerHint(picker);
+      }
+      return;
+    }
+
+    const pickerAreaBtn = target.closest<HTMLButtonElement>('[data-picker-area]');
+    if (pickerAreaBtn && picker) {
+      window.clearTimeout(pickerTimer);
+      pickerArea = pickerAreaBtn.dataset.pickerArea ?? '';
+      renderPickerQuick(picker);
+      renderPickerHint(picker);
+      return;
+    }
+
+    if (target.closest('[data-picker-widen-radius]') && picker) {
+      window.clearTimeout(pickerTimer);
+      pickerRadiusKm = 20;
+      renderPickerQuick(picker);
+      renderPickerHint(picker);
+      return;
+    }
+
+    if (target.closest('[data-picker-switch-manual]') && picker) {
+      window.clearTimeout(pickerTimer);
+      pickerGeoReqSeq += 1;
+      if (pickerGeoStatus === 'loading') pickerGeoStatus = pickerGeoOrigin ? 'ready' : 'idle';
+      pickerLocationMode = 'manual';
+      renderPickerQuick(picker);
+      renderPickerHint(picker);
+      return;
+    }
+
     const pickerCityBtn = target.closest<HTMLButtonElement>('[data-picker-city]');
     if (pickerCityBtn && picker) {
       const value = pickerCityBtn.dataset.pickerCity ?? '';
       window.clearTimeout(pickerTimer);
       pickerCity = value === SEMUA_KOTA || !isCity(value) ? SEMUA_KOTA : value;
+      pickerArea = '';
       renderPickerQuick(picker);
       renderPickerHint(picker);
       return;

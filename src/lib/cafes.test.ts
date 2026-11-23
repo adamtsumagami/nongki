@@ -3,10 +3,14 @@ import { CAFES_DATA, type Cafe } from '../data/cafes';
 import {
   SEMUA_KOTA,
   buildCafeShareUrl,
+  distanceKm,
   filterCafes,
+  findNearestCafe,
   formatBucketlistShareText,
   formatCafeShareText,
+  formatDistanceKm,
   formatHours,
+  getAreasForCity,
   getCafeOfTheDay,
   getInitials,
   getLocalDateKey,
@@ -295,5 +299,57 @@ describe('berbagi kafe & daftar simpan', () => {
     expect(listText).toContain('Daftar Nongki — Mau ke sini (2 kafe)');
     expect(listText).toContain(`1. ${CAFES_DATA[0].name}`);
     expect(listText).toContain(`2. ${CAFES_DATA[1].name}`);
+  });
+});
+
+describe('jarak, radius, dan kawasan', () => {
+  it('menghitung jarak Haversine dan memformatnya dalam meter dan kilometer', () => {
+    const asiang = CAFES_DATA.find((c) => c.id === 'asiang')!;
+    const cw = CAFES_DATA.find((c) => c.id === 'cw-coffee-reformasi')!;
+    const kemang = CAFES_DATA.find((c) => c.id === 'anomali-kemang')!;
+
+    expect(distanceKm({ lat: asiang.lat, lng: asiang.lng }, { lat: asiang.lat, lng: asiang.lng })).toBe(0);
+    const pontianakDist = distanceKm({ lat: asiang.lat, lng: asiang.lng }, { lat: cw.lat, lng: cw.lng });
+    expect(pontianakDist).toBeGreaterThan(2);
+    expect(pontianakDist).toBeLessThan(6);
+
+    const crossIslandDist = distanceKm(
+      { lat: asiang.lat, lng: asiang.lng },
+      { lat: kemang.lat, lng: kemang.lng },
+    );
+    expect(crossIslandDist).toBeGreaterThan(700);
+
+    expect(formatDistanceKm(0.42)).toBe('420 m');
+    expect(formatDistanceKm(2.44)).toBe('2,4 km');
+  });
+
+  it('menyaring berdasarkan radius lokasi dan kawasan kota', () => {
+    const pontianakOrigin = { lat: -0.032, lng: 109.335 };
+    const within2Km = filterCafes(CAFES_DATA, {
+      near: { origin: pontianakOrigin, maxDistanceKm: 2 },
+    });
+    expect(within2Km.length).toBeGreaterThan(0);
+    expect(within2Km.every((c) => c.city === 'Pontianak')).toBe(true);
+
+    const within5Km = filterCafes(CAFES_DATA, {
+      near: { origin: pontianakOrigin, maxDistanceKm: 5 },
+    });
+    expect(within5Km.length).toBeGreaterThanOrEqual(within2Km.length);
+
+    const gajahMada = filterCafes(CAFES_DATA, { city: 'Pontianak', area: 'Gajah Mada' });
+    expect(gajahMada.length).toBe(2);
+    expect(gajahMada.every((c) => c.area === 'Gajah Mada')).toBe(true);
+  });
+
+  it('menemukan kafe terdekat dan daftar kawasan unik per kota', () => {
+    const nearest = findNearestCafe(CAFES_DATA, { lat: -0.029, lng: 109.341 });
+    expect(nearest?.cafe.id).toBe('asiang');
+    expect(nearest?.distanceKm).toBeLessThan(0.5);
+    expect(findNearestCafe([], { lat: 0, lng: 0 })).toBeUndefined();
+
+    const areas = getAreasForCity(CAFES_DATA, 'Pontianak');
+    expect(areas).toContain('Gajah Mada');
+    expect(areas).toContain('Reformasi');
+    expect(new Set(areas).size).toBe(areas.length);
   });
 });

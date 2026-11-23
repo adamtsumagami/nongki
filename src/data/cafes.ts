@@ -109,6 +109,8 @@ export interface Cafe {
   description: string;
   menuHighlights: string[];
   mapsUrl: string;
+  lat: number;
+  lng: number;
   accentColor: string;
   image?: string;
 }
@@ -138,6 +140,8 @@ export const CAFES_DATA: Cafe[] = [
       'Ikon warung kopi legendaris Pontianak yang tersohor di nusantara. Disajikan langsung oleh Koh Asiang dengan gaya atraktif, meracik kopi hitam pekat dan kopi susu berbuih halus khas Pontianak.',
     menuHighlights: ['Kopi hitam saring', 'Kopi susu', 'Telur setengah matang', 'Roti bakar'],
     mapsUrl: 'https://www.google.com/maps/search/kafe+pontianak',
+    lat: -0.0289,
+    lng: 109.3410,
     accentColor: '#c9281e',
   },
   {
@@ -161,6 +165,8 @@ export const CAFES_DATA: Cafe[] = [
       'Pelebaran modern dari warung kopi legendaris Jl. H. Abbas. Menyediakan bubuk kopi robusta racikan otentik Aming yang harum pekat, ditemani roti srikaya panggang dan pisang goreng krispi.',
     menuHighlights: ['Kopi susu Aming', 'Roti srikaya', 'Pisang goreng', 'Kopi robusta'],
     mapsUrl: 'https://www.google.com/maps/search/kafe+pontianak',
+    lat: -0.0365,
+    lng: 109.3278,
     accentColor: '#3aaae0',
   },
   {
@@ -184,6 +190,8 @@ export const CAFES_DATA: Cafe[] = [
       'Salah satu pelopor kedai kopi gelombang ketiga di kawasan kuliner Jl. Hijas. Interior industrial minimalis dengan bar espresso modern, Wi-Fi kencang, dan aneka kreasi kopi serta kudapan.',
     menuHighlights: ['Es kopi susu', 'Seduh manual', 'Croissant', 'Latte matcha'],
     mapsUrl: 'https://www.google.com/maps/search/kafe+pontianak',
+    lat: -0.0276,
+    lng: 109.3436,
     accentColor: '#a89018',
   },
   {
@@ -207,6 +215,8 @@ export const CAFES_DATA: Cafe[] = [
       'Titik temu komunitas kreatif Pontianak. Dikelilingi pepohonan rindang dan arsitektur semi-terbuka yang sejuk, tersedia meja panjang untuk bekerja dan menu kopi yang menyegarkan.',
     menuHighlights: ['Kopi susu gula aren', 'Americano', 'Kentang goreng', 'Nasi ayam'],
     mapsUrl: 'https://www.google.com/maps/search/kafe+pontianak',
+    lat: -0.0535,
+    lng: 109.3282,
     accentColor: '#2a8a4a',
   },
   {
@@ -231,6 +241,8 @@ export const CAFES_DATA: Cafe[] = [
       'Jaringan kedai kopi lokal Pontianak yang buka 24 jam dengan colokan di hampir tiap meja, kursi ergonomis, dan koneksi internet stabil. Pilihan utama saat tenggat mengejar.',
     menuHighlights: ['Kopi susu CW', 'Americano', 'Sayap ayam', 'Mi instan'],
     mapsUrl: 'https://www.google.com/maps/search/kafe+pontianak',
+    lat: -0.0598,
+    lng: 109.3492,
     accentColor: '#6a4d9c',
   },
   {
@@ -253,6 +265,8 @@ export const CAFES_DATA: Cafe[] = [
       'Kedai kopi dengan atmosfer hangat yang sangat dekat dengan kawasan kampus Untan. Tempat favorit mahasiswa untuk bertukar cerita sambil menikmati seduh manual dan kopi susu aren terjangkau.',
     menuHighlights: ['Kopi susu aren', 'V60', 'Pisang goreng keju', 'Teh tarik'],
     mapsUrl: 'https://www.google.com/maps/search/kafe+pontianak',
+    lat: -0.0621,
+    lng: 109.3518,
     accentColor: '#e07a30',
   },
   {
@@ -275,6 +289,8 @@ export const CAFES_DATA: Cafe[] = [
       'Warung kopi klasik di urat nadi Jl. Gajah Mada. Selalu ramai pada pagi hari oleh obrolan warga lokal, ditemani secangkir kopi hitam manis kental dan roti kukus selai srikaya buatan sendiri.',
     menuHighlights: ['Kopi saring', 'Roti kukus srikaya', 'Kopi susu', 'Pisang goreng'],
     mapsUrl: 'https://www.google.com/maps/search/kafe+pontianak',
+    lat: -0.0312,
+    lng: 109.3422,
     accentColor: '#9a9aa0',
   },
   {
@@ -297,6 +313,8 @@ export const CAFES_DATA: Cafe[] = [
       'Sesuai namanya, mengusung konsep kafe taman terbuka dengan pepohonan rindang dan angin sepoi-sepoi. Pilihan tepat untuk melepas penat setelah seharian beraktivitas.',
     menuHighlights: ['Kopi susu', 'Kopi seduh dingin', 'Pasta', 'Kue'],
     mapsUrl: 'https://www.google.com/maps/search/kafe+pontianak',
+    lat: -0.0454,
+    lng: 109.3186,
     accentColor: '#2a8a4a',
   },
 
@@ -324,6 +342,8 @@ export const CAFES_DATA: Cafe[] = [
       'Kedai kopi spesialti yang mengangkat biji kopi dari berbagai daerah di Indonesia. Ruangannya lapang, nyaman untuk bekerja, dan menunya menjelaskan asal biji dengan jelas.',
     menuHighlights: ['Es kopi susu', 'Seduh manual', 'Croissant', 'Kopi single origin'],
     mapsUrl: 'https://www.google.com/maps/search/kafe+jakarta',
+    lat: -6.2607,
+    lng: 106.8135,
     accentColor: '#3aaae0',
   },
   {
@@ -346,6 +366,8 @@ export const CAFES_DATA: Cafe[] = [
       'Kedai sekaligus rumah sangrai kopi yang tenang di Menteng. Cocok untuk mencicipi racikan biji pilihan, belajar soal sangrai, atau sekadar membaca buku di sore hari.',
     menuHighlights: ['Seduh manual', 'Espresso', 'Kopi susu', 'Kue mentega'],
     mapsUrl: 'https://www.google.com/maps/search/kafe+jakarta',
+    lat: -6.1995,
+    lng: 106.8359,
     accentColor: '#2a8a4a',
   },
 
@@ -373,6 +395,8 @@ export const CAFES_DATA: Cafe[] = [
       'Kedai kopi dengan nuansa klasik di kawasan Braga. Menyajikan kopi susu dan camilan yang akrab di lidah, dengan interior kayu yang hangat dan lokasi yang mudah dijangkau.',
     menuHighlights: ['Kopi susu', 'Es kopi susu', 'Roti bakar', 'Pisang goreng'],
     mapsUrl: 'https://www.google.com/maps/search/kafe+bandung',
+    lat: -6.9178,
+    lng: 107.6095,
     accentColor: '#a89018',
   },
   {
@@ -395,6 +419,8 @@ export const CAFES_DATA: Cafe[] = [
       'Tempat ngopi sederhana di Dago dengan area terbuka dan menu camilan yang ramah kantong. Sering jadi titik kumpul mahasiswa dan warga sekitar pada malam hari.',
     menuHighlights: ['Kopi susu', 'Cimol', 'Teh manis', 'Pisang goreng'],
     mapsUrl: 'https://www.google.com/maps/search/kafe+bandung',
+    lat: -6.8938,
+    lng: 107.6131,
     accentColor: '#e07a30',
   },
 
@@ -422,6 +448,8 @@ export const CAFES_DATA: Cafe[] = [
       'Warung kopi di lereng Kaliurang yang dikenal dengan suasana kampung dan pemandangan hijau. Menu kopi dan gorengan sederhana disajikan dengan pemandangan yang menyegarkan.',
     menuHighlights: ['Kopi klotok', 'Pisang goreng', 'Tahu tempe', 'Teh manis'],
     mapsUrl: 'https://www.google.com/maps/search/kafe+yogyakarta',
+    lat: -7.6584,
+    lng: 110.4216,
     accentColor: '#2a8a4a',
   },
   {
@@ -444,6 +472,8 @@ export const CAFES_DATA: Cafe[] = [
       'Warung kopi malam yang terkenal dengan kopi joss, yaitu kopi panas yang diberi arang membara. Rasanya unik, suasananya ramai, dan cocok untuk ngobrol sampai larut.',
     menuHighlights: ['Kopi joss', 'Kopi susu', 'Gorengan', 'Indomie'],
     mapsUrl: 'https://www.google.com/maps/search/kafe+yogyakarta',
+    lat: -7.8134,
+    lng: 110.3547,
     accentColor: '#c9281e',
   },
 
@@ -470,6 +500,8 @@ export const CAFES_DATA: Cafe[] = [
       'Kedai kopi dengan ruang kerja yang tertata dan colokan di banyak meja. Menyajikan kopi susu serta menu pendamping yang cocok untuk sesi kerja panjang.',
     menuHighlights: ['Kopi susu', 'Americano', 'Roti bakar', 'Nasi goreng'],
     mapsUrl: 'https://www.google.com/maps/search/kafe+surabaya',
+    lat: -7.2892,
+    lng: 112.7389,
     accentColor: '#3aaae0',
   },
   {
@@ -492,6 +524,8 @@ export const CAFES_DATA: Cafe[] = [
       'Tempat legendaris di Surabaya yang menyajikan es krim dan kopi dengan suasana lama yang tetap terjaga. Cocok untuk berhenti sejenak saat berjalan-jalan di pusat kota.',
     menuHighlights: ['Es krim', 'Kopi susu', 'Roti bakar', 'Es campur'],
     mapsUrl: 'https://www.google.com/maps/search/kafe+surabaya',
+    lat: -7.2636,
+    lng: 112.7484,
     accentColor: '#9a9aa0',
   },
 
@@ -519,6 +553,8 @@ export const CAFES_DATA: Cafe[] = [
       'Warung kopi tua di kawasan Kesawan yang tetap ramai hingga kini. Kopi susunya kental dan manis, disajikan bersama roti bakar dan obrolan warga kota.',
     menuHighlights: ['Kopi susu', 'Roti bakar', 'Kopi hitam', 'Telur setengah matang'],
     mapsUrl: 'https://www.google.com/maps/search/kafe+medan',
+    lat: 3.5869,
+    lng: 98.6788,
     accentColor: '#c9281e',
   },
   {
@@ -541,6 +577,8 @@ export const CAFES_DATA: Cafe[] = [
       'Kedai kopi modern di kawasan Merdeka Walk dengan ruang ber-AC dan area duduk yang nyaman. Menyajikan kopi susu serta minuman kekinian untuk menemani malam di kota.',
     menuHighlights: ['Es kopi susu', 'Latte', 'Kentang goreng', 'Donat'],
     mapsUrl: 'https://www.google.com/maps/search/kafe+medan',
+    lat: 3.5914,
+    lng: 98.6776,
     accentColor: '#6a4d9c',
   },
 
@@ -567,6 +605,8 @@ export const CAFES_DATA: Cafe[] = [
       'Kedai kopi dekat kawasan Losari dengan ruang duduk yang nyaman. Setelah ngopi, kamu bisa langsung berjalan kaki menikmati angin laut dan matahari terbenam.',
     menuHighlights: ['Kopi susu', 'Es kopi susu', 'Pisang goreng', 'Nasi goreng'],
     mapsUrl: 'https://www.google.com/maps/search/kafe+makassar',
+    lat: -5.1436,
+    lng: 119.4083,
     accentColor: '#3aaab8',
   },
   {
@@ -589,6 +629,8 @@ export const CAFES_DATA: Cafe[] = [
       'Warung kopi dengan area terbuka yang menghadap ke arah laut. Tempat yang ramai pada malam hari, cocok untuk ngobrol santai sambil menikmati suasana pesisir.',
     menuHighlights: ['Kopi susu', 'Kopi hitam', 'Pisang goreng', 'Jagung bakar'],
     mapsUrl: 'https://www.google.com/maps/search/kafe+makassar',
+    lat: -5.1518,
+    lng: 119.4036,
     accentColor: '#e07a30',
   },
 
@@ -616,6 +658,8 @@ export const CAFES_DATA: Cafe[] = [
       'Kafe dengan taman hijau dan menu yang menekankan bahan segar. Suasananya tenang, ramah untuk hewan peliharaan, dan cocok untuk sarapan atau kerja ringan.',
     menuHighlights: ['Kopi Bali', 'Jus buah', 'Roti gandum', 'Salad'],
     mapsUrl: 'https://www.google.com/maps/search/kafe+denpasar',
+    lat: -8.6716,
+    lng: 115.2339,
     accentColor: '#2a8a4a',
   },
   {
@@ -638,6 +682,8 @@ export const CAFES_DATA: Cafe[] = [
       'Kedai kopi yang mengangkat biji kopi Kintamani dengan area terbuka dan tanaman hijau. Tempat yang nyaman untuk berhenti sejenak di tengah kesibukan kota.',
     menuHighlights: ['Kopi Kintamani', 'Es kopi susu', 'Pisang goreng', 'Kue kelapa'],
     mapsUrl: 'https://www.google.com/maps/search/kafe+denpasar',
+    lat: -8.6748,
+    lng: 115.2392,
     accentColor: '#a89018',
   },
 ];

@@ -942,6 +942,119 @@
   gap: 7px;
 }
 
+.picker__loc-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.picker__mode {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  flex: 1 1 160px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1.5px solid var(--ink);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease, opacity .15s ease;
+}
+
+.picker__mode[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--cream);
+}
+
+.picker__mode:focus-visible,
+.picker__loc-action:focus-visible,
+.picker__hint-btn:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.picker__mode:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+
+.picker__mode svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+}
+
+.picker__loc-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1.5px solid rgba(26, 26, 26, .35);
+  border-radius: 11px;
+  background: rgba(247, 243, 236, .78);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.picker__loc-bar.is-error {
+  background: #f7f3ec;
+  border-color: #8a1f16;
+  color: #8a1f16;
+}
+
+.picker__loc-action {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1.5px solid currentColor;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.picker__hint-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1.5px solid var(--ink);
+  border-radius: 9px;
+  background: var(--ink);
+  color: var(--cream);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+[data-picker-auto-panel][hidden],
+[data-picker-manual-panel][hidden],
+[data-picker-area-group][hidden] {
+  display: none;
+}
+
 .picker .fchip {
   border-color: rgba(26, 26, 26, .4);
   color: var(--ink);
@@ -1153,6 +1266,11 @@
   letter-spacing: .03em;
   text-transform: uppercase;
   color: var(--paper-mut, #5c574e);
+}
+
+.rcard__dist {
+  color: var(--ink);
+  font-weight: 600;
 }
 
 .rcard__best {
@@ -1716,6 +1834,7 @@ body.bucket-open {
 
 @media (prefers-reduced-motion: reduce) {
   .rcard,
+  .picker__mode,
   .back-to-top,
   .bucket__panel,
   .bucket__overlay {

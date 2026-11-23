@@ -17,9 +17,22 @@ export const SEMUA_KOTA = 'Semua Kota' as const;
 
 export type CityFilter = City | typeof SEMUA_KOTA;
 
+export interface GeoPoint {
+  lat: number;
+  lng: number;
+}
+
+export const PICKER_RADIUS_OPTIONS = [2, 5, 10, 20] as const;
+
+export type PickerRadiusKm = (typeof PICKER_RADIUS_OPTIONS)[number];
+
+export const DEFAULT_PICKER_RADIUS_KM: PickerRadiusKm = 5;
+
 export interface CafeFilters {
   query?: string;
   city?: CityFilter;
+  area?: string;
+  near?: { origin: GeoPoint; maxDistanceKm: number };
   vibes?: Vibe[];
   facilities?: Facility[];
   priceLevels?: PriceLevel[];
@@ -152,9 +165,56 @@ function searchableText(cafe: Cafe): string {
     .toLocaleLowerCase('id-ID');
 }
 
+function toRadians(deg: number): number {
+  return (deg * Math.PI) / 180;
+}
+
+/** Menghitung jarak garis lurus antar dua koordinat dalam kilometer (Haversine). */
+export function distanceKm(from: GeoPoint, to: GeoPoint): number {
+  const earthRadiusKm = 6371;
+  const dLat = toRadians(to.lat - from.lat);
+  const dLng = toRadians(to.lng - from.lng);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRadians(from.lat)) * Math.cos(toRadians(to.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * earthRadiusKm * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+export function formatDistanceKm(km: number): string {
+  if (km < 1) {
+    return `${Math.max(50, Math.round(km * 1000))} m`;
+  }
+  return `${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 }).format(km)} km`;
+}
+
+export function findNearestCafe(
+  cafes: Cafe[],
+  origin: GeoPoint,
+): { cafe: Cafe; distanceKm: number } | undefined {
+  let nearest: { cafe: Cafe; distanceKm: number } | undefined;
+  for (const cafe of cafes) {
+    const dist = distanceKm(origin, { lat: cafe.lat, lng: cafe.lng });
+    if (!nearest || dist < nearest.distanceKm) {
+      nearest = { cafe, distanceKm: dist };
+    }
+  }
+  return nearest;
+}
+
+export function getAreasForCity(cafes: Cafe[], city: City): string[] {
+  const areas = new Set<string>();
+  for (const cafe of cafes) {
+    if (cafe.city === city && cafe.area.trim()) {
+      areas.add(cafe.area.trim());
+    }
+  }
+  return Array.from(areas).sort((a, b) => a.localeCompare(b, 'id'));
+}
+
 export function filterCafes(cafes: Cafe[], filters: CafeFilters = {}): Cafe[] {
   const query = filters.query?.trim().toLocaleLowerCase('id-ID') ?? '';
   const city = filters.city ?? SEMUA_KOTA;
+  const area = filters.area?.trim() ?? '';
   const vibes = filters.vibes ?? [];
   const facilities = filters.facilities ?? [];
   const priceLevels = filters.priceLevels ?? [];
@@ -162,6 +222,14 @@ export function filterCafes(cafes: Cafe[], filters: CafeFilters = {}): Cafe[] {
 
   return cafes.filter((cafe) => {
     if (city !== SEMUA_KOTA && cafe.city !== city) return false;
+    if (area && cafe.area !== area) return false;
+    if (
+      filters.near &&
+      distanceKm(filters.near.origin, { lat: cafe.lat, lng: cafe.lng }) >
+        filters.near.maxDistanceKm
+    ) {
+      return false;
+    }
     if (vibes.length > 0 && !vibes.every((vibe) => cafe.vibes.includes(vibe))) return false;
     if (facilities.length > 0 && !facilities.every((facility) => cafe.facilities.includes(facility))) {
       return false;

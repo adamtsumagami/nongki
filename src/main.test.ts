@@ -430,4 +430,121 @@ describe('Nongki Platform', () => {
     expect(themeSource).toContain("mouse.element.removeEventListener('wheel', mouse.mousewheel)");
     expect(themeSource).not.toContain('initFvp(');
   });
+
+  it('supports manual city and area filtering in the random picker', () => {
+    vi.useFakeTimers();
+    try {
+      document.querySelector<HTMLButtonElement>('[data-picker-city="Semua Kota"]')?.click();
+      const manualBtn = document.querySelector<HTMLButtonElement>('[data-picker-loc-mode="manual"]')!;
+      const autoBtn = document.querySelector<HTMLButtonElement>('[data-picker-loc-mode="auto"]')!;
+      const areaGroup = document.querySelector<HTMLElement>('[data-picker-area-group]')!;
+      const pontianakBtn = document.querySelector<HTMLButtonElement>('[data-picker-city="Pontianak"]')!;
+      const spinBtn = document.querySelector<HTMLButtonElement>('[data-picker-spin]')!;
+      const out = document.querySelector<HTMLElement>('[data-picker-out]')!;
+
+      expect(manualBtn.getAttribute('aria-pressed')).toBe('true');
+      expect(autoBtn.getAttribute('aria-pressed')).toBe('false');
+      expect(areaGroup.hidden).toBe(true);
+
+      pontianakBtn.click();
+      expect(areaGroup.hidden).toBe(false);
+
+      const gajahMadaBtn = document.querySelector<HTMLButtonElement>('[data-picker-area="Gajah Mada"]')!;
+      expect(gajahMadaBtn).not.toBeNull();
+      gajahMadaBtn.click();
+      expect(
+        document.querySelector<HTMLButtonElement>('[data-picker-area="Gajah Mada"]')?.getAttribute('aria-pressed'),
+      ).toBe('true');
+
+      spinBtn.click();
+      vi.advanceTimersByTime(5000);
+      expect(out.textContent).toContain('Pontianak · Gajah Mada');
+    } finally {
+      document.querySelector<HTMLButtonElement>('[data-picker-city="Semua Kota"]')?.click();
+      vi.useRealTimers();
+    }
+  });
+
+  it('supports device geolocation mode with radius selection, empty radius, and error recovery', () => {
+    vi.useFakeTimers();
+    const originalGeolocation = Object.getOwnPropertyDescriptor(navigator, 'geolocation');
+
+    try {
+      const autoBtn = document.querySelector<HTMLButtonElement>('[data-picker-loc-mode="auto"]')!;
+      const manualBtn = document.querySelector<HTMLButtonElement>('[data-picker-loc-mode="manual"]')!;
+      const autoPanel = document.querySelector<HTMLElement>('[data-picker-auto-panel]')!;
+      const locStatus = document.querySelector<HTMLElement>('[data-picker-loc-status]')!;
+      const spinBtn = document.querySelector<HTMLButtonElement>('[data-picker-spin]')!;
+      const out = document.querySelector<HTMLElement>('[data-picker-out]')!;
+
+      // 1. Success near Pontianak
+      const getCurrentPosition = vi.fn((success: PositionCallback) => {
+        success({
+          coords: { latitude: -0.032, longitude: 109.335 },
+        } as GeolocationPosition);
+      });
+      Object.defineProperty(navigator, 'geolocation', {
+        configurable: true,
+        value: { getCurrentPosition },
+      });
+
+      autoBtn.click();
+      expect(getCurrentPosition).toHaveBeenCalledTimes(1);
+      expect(autoBtn.getAttribute('aria-pressed')).toBe('true');
+      expect(autoPanel.hidden).toBe(false);
+      expect(locStatus.textContent).toContain('Lokasi aktif');
+      expect(locStatus.textContent).toContain('Pontianak');
+      expect(
+        document.querySelector<HTMLButtonElement>('[data-picker-radius="5"]')?.getAttribute('aria-pressed'),
+      ).toBe('true');
+
+      document.querySelector<HTMLButtonElement>('[data-picker-radius="10"]')!.click();
+      expect(locStatus.textContent).toContain('maks. 10 km');
+
+      spinBtn.click();
+      vi.advanceTimersByTime(5000);
+      expect(out.querySelector('.rcard')).not.toBeNull();
+      expect(out.textContent).toContain('dari lokasimu');
+
+      // 2. Empty radius when location is far from all cafes
+      const farGeo = vi.fn((success: PositionCallback) => {
+        success({
+          coords: { latitude: -6.9, longitude: 112.0 },
+        } as GeolocationPosition);
+      });
+      Object.defineProperty(navigator, 'geolocation', {
+        configurable: true,
+        value: { getCurrentPosition: farGeo },
+      });
+      document.querySelector<HTMLButtonElement>('[data-picker-loc-retry]')!.click();
+      expect(spinBtn.disabled).toBe(true);
+      expect(out.querySelector('[data-picker-switch-manual]')).not.toBeNull();
+
+      // 3. Error (PERMISSION_DENIED) + fallback to manual
+      const deniedGeo = vi.fn((_success: PositionCallback, error: PositionErrorCallback) => {
+        error({ code: 1, message: 'denied' } as GeolocationPositionError);
+      });
+      Object.defineProperty(navigator, 'geolocation', {
+        configurable: true,
+        value: { getCurrentPosition: deniedGeo },
+      });
+      document.querySelector<HTMLButtonElement>('[data-picker-loc-retry]')!.click();
+      expect(locStatus.getAttribute('role')).toBe('alert');
+      expect(locStatus.textContent).toContain('Izin lokasi ditolak');
+      expect(locStatus.querySelector('[data-picker-loc-retry]')).not.toBeNull();
+
+      manualBtn.click();
+      expect(manualBtn.getAttribute('aria-pressed')).toBe('true');
+      expect(autoPanel.hidden).toBe(true);
+    } finally {
+      document.querySelector<HTMLButtonElement>('[data-picker-loc-mode="manual"]')?.click();
+      document.querySelector<HTMLButtonElement>('[data-picker-city="Semua Kota"]')?.click();
+      if (originalGeolocation) {
+        Object.defineProperty(navigator, 'geolocation', originalGeolocation);
+      } else {
+        delete (navigator as unknown as Record<string, unknown>).geolocation;
+      }
+      vi.useRealTimers();
+    }
+  });
 });
