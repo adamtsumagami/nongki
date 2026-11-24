@@ -725,11 +725,12 @@
 
 .fgroup {
   margin-top: 16px;
+  min-width: 0;
 }
 
 .catalog__fgrid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0 24px;
 }
 
@@ -754,10 +755,13 @@
 .frow {
   display: flex;
   gap: 8px;
+  min-width: 0;
   padding: 2px 0 4px;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
 }
 
 .frow::-webkit-scrollbar {
@@ -987,7 +991,7 @@
 
 .catalog__advanced-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px 24px;
   padding-top: 10px;
 }
