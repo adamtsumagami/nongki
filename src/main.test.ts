@@ -689,6 +689,22 @@ describe('Nongki Platform', () => {
       expect(document.querySelector('[data-toast]')?.textContent).toContain('Daftar simpan dikosongkan.');
 
       document.querySelector<HTMLElement>('[data-bucket-close]')!.click();
+
+      // COD inspect preserves pre-existing filters via one-click restore chip
+      const hemat = document.querySelector<HTMLButtonElement>('[data-catalog-preset="hemat"]')!;
+      hemat.click();
+      document.querySelector<HTMLButtonElement>('[data-cafe-of-day="desktop"] [data-cod-inspect]')!.click();
+      const restoreChip = document.querySelector<HTMLButtonElement>('[data-catalog-restore]')!;
+      expect(restoreChip).not.toBeNull();
+      restoreChip.click();
+      expect(hemat.getAttribute('aria-pressed')).toBe('true');
+
+      // Menu drawer toggles [data-main] inertness on open & Escape close
+      const mainWrap = document.querySelector<HTMLElement>('[data-main]')!;
+      menuBtn.click();
+      expect(mainWrap.inert).toBe(true);
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      expect(mainWrap.inert).toBe(false);
     } finally {
       resetBtn.click();
       window.history.replaceState(null, '', '/');

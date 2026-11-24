@@ -73,7 +73,7 @@
       ticking = false;
       var y = window.scrollY;
       var open = document.body.dataset.menuStatus === 'open' ||
-                 document.body.classList.contains('nav-follow');
+        document.body.classList.contains('nav-follow');
       if (open || y <= 0 || y < heroB) { nav.classList.remove('is-tucked'); lastY = y; return; }
       // 6px dead zone so tiny jitter (iOS momentum wobble) can't flicker it
       if (y > lastY + 6) nav.classList.add('is-tucked');
@@ -131,6 +131,8 @@
       navFollowOn();
       lockScroll();
       document.body.dataset.menuStatus = 'open';
+      var mainEl = document.querySelector('[data-main]');
+      if (mainEl) mainEl.inert = true;
       if (menuEl) menuEl.setAttribute('aria-hidden', 'false');
       syncToggles(true);
       if (menuEl) {
@@ -148,6 +150,8 @@
       navFollowOff();
       unlockScroll();
       document.body.dataset.menuStatus = 'closed';
+      var mainEl = document.querySelector('[data-main]');
+      if (mainEl) mainEl.inert = false;
       if (menuEl) menuEl.setAttribute('aria-hidden', 'true');
       syncToggles(false);
       if (restoreFocus && lastTrigger && typeof lastTrigger.focus === 'function') {
@@ -205,8 +209,13 @@
      CSS keyframe version translated a ~6000px composited layer by
      percentages, which iOS Safari intermittently renders blank. Constant
      px/s speed (slower on phones), hover pause, reduced-motion static. */
+  function isHiddenTree(el) {
+    return !!(el && el.closest && el.closest('[hidden]'));
+  }
+
   function initMarquee(root) {
     root.querySelectorAll('[data-marquee]').forEach(function (track) {
+      if (isHiddenTree(track)) return;
       if (track.dataset.bound) return; track.dataset.bound = '1';
       track.innerHTML += track.innerHTML;
       var wrap = track.parentElement;
@@ -311,7 +320,7 @@
       // centre-bag float: a JS sine riding inside the slot transform (via
       // --ufo-float), like the mockup — a CSS keyframe would stomp the
       // slot transition and make rotations snap.
-      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      if (!isHiddenTree(sec) && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         var floatStart = performance.now();
         (function floatTick(t) {
           if (!document.body.contains(sec)) return;
@@ -429,6 +438,7 @@
      scroll frame, and resizing the backdrop on each, made it judder on iOS. */
   function initTimeline(root) {
     root.querySelectorAll('[data-timeline]').forEach(function (sec) {
+      if (isHiddenTree(sec)) return;
       if (sec.dataset.bound) return; sec.dataset.bound = '1';
       var track = sec.querySelector('[data-timeline-track]');
       var bg = sec.querySelector('[data-timeline-bg]');
@@ -534,6 +544,7 @@
   function initBeanFields(root) {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     root.querySelectorAll('[data-bean-field]').forEach(function (field) {
+      if (isHiddenTree(field)) return;
       if (field.dataset.bound) return; field.dataset.bound = '1';
       var host = field.parentElement;
       var beans = Array.prototype.slice.call(field.querySelectorAll('img'));
@@ -609,7 +620,7 @@
               if (j === i || !slots[j].on) continue;
               var sx = slots[j].left / 100 * dims.w, sy = slots[j].top / 100 * dims.h;
               if (Math.abs(x - sx) < (size + slots[j].size) / 2 * scale * 0.9 &&
-                  Math.abs(y - sy) < (size + slots[j].size) / 2 * scale * 0.9) { ok = false; break; }
+                Math.abs(y - sy) < (size + slots[j].size) / 2 * scale * 0.9) { ok = false; break; }
             }
           }
           if (ok) return { left: left, top: top, size: size };
@@ -757,7 +768,10 @@
     if (!words.length) return;
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduce) {
-      words.forEach(function (w) { w.style.opacity = 1; });
+      words.forEach(function (w) {
+        w.style.opacity = 1;
+        if (w.closest && w.closest('.mk')) w.classList.add('is-ink');
+      });
       [].forEach.call(mani.querySelectorAll('.mk'), function (m) { m.classList.add('is-on'); });
       return;
     }
@@ -802,6 +816,7 @@
       for (var i = 0; i < words.length; i++) {
         var w = words[i];
         w.style.opacity = (0.22 + 0.78 * Math.max(0, Math.min(1, lit - i))).toFixed(3);
+        if (w.closest && w.closest('.mk')) w.classList.toggle('is-ink', lit > i + 0.15);
         if (w.classList.contains('w--x')) w.style.setProperty('--xp', Math.max(0, Math.min(1, (lit - i - 0.15) / 0.85)).toFixed(3));
       }
       marks.forEach(function (m) {
@@ -815,6 +830,7 @@
     measureMarks(); frame();
     window.addEventListener('load', function () { measureMarks(); kick(); });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { measureMarks(); kick(); });
+    setTimeout(function () { measureMarks(); kick(); }, 600);
   }
 
   /* ---- phone hero: "lazy susan" of best-selling roasts --------------------- */
@@ -1222,7 +1238,7 @@
     });
   }
 
-    function initAll(scope) {
+  function initAll(scope) {
     var root = scope || document;
     initMenu(root); initNavTuck(); initOneLineTitles(root); initMarquee(root); initUfo(root);
     initStickySteps(root); initTimeline(root); initScrollTo(root); initBeanFields(root);
@@ -1296,7 +1312,7 @@
     }, true);
   }
 
-    document.addEventListener('DOMContentLoaded', function () {
+  document.addEventListener('DOMContentLoaded', function () {
     initAll(document);
     initSmoothScroll();
     initPress();

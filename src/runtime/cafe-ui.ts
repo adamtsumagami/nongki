@@ -319,6 +319,7 @@ const CATALOG_PRESETS: readonly CatalogPreset[] = [
 
 const CATALOG_PAGE_SIZE = 12;
 let catalogShowAll = false;
+let savedCatalogBeforeInspect: CatalogState | null = null;
 
 const catalogState: CatalogState = {
   query: '',
@@ -501,6 +502,7 @@ function syncCatalogChips(catalog: HTMLElement): void {
   if (advBadge) {
     advBadge.textContent = String(advCount);
     advBadge.hidden = advCount === 0;
+    advBadge.setAttribute('aria-hidden', String(advCount === 0));
   }
 }
 
@@ -549,6 +551,12 @@ function buildActiveChipsMarkup(): string {
   catalogState.priceLevels.forEach((p) => pushChip('price', PRICE_LEVEL_SHORT[p], String(p)));
   if (catalogState.openNow) pushChip('open', 'Buka sekarang');
   if (catalogState.sort !== 'default') pushChip('sort', `Urut: ${SORT_LABELS[catalogState.sort]}`);
+
+  if (savedCatalogBeforeInspect) {
+    chips.unshift(
+      '<button class="catalog__active-chip" type="button" data-catalog-restore aria-label="Kembali ke filter sebelumnya">← Filter sebelumnya</button>',
+    );
+  }
 
   return chips.join('');
 }
@@ -669,7 +677,11 @@ function renderCatalog(catalog: HTMLElement): void {
           ? ` · ${esc(catalogState.city)} (${esc(catalogState.area)})`
           : ` · ${esc(catalogState.city)}`
         : '';
-    count.innerHTML = `Menampilkan <b>${results.length}</b> dari ${CAFES_DATA.length} kafe${scopeSuffix}`;
+    const pageSuffix =
+      !catalogShowAll && results.length > CATALOG_PAGE_SIZE
+        ? ` · ${CATALOG_PAGE_SIZE} ditampilkan`
+        : '';
+    count.innerHTML = `Menampilkan <b>${results.length}</b> dari ${CAFES_DATA.length} kafe${scopeSuffix}${pageSuffix}`;
   }
   if (activeBar) {
     const chipsMarkup = buildActiveChipsMarkup();
@@ -695,6 +707,7 @@ function handleFilterClick(button: HTMLButtonElement, catalog: HTMLElement): voi
   const group = button.dataset.filterGroup;
   const value = button.dataset.filterValue ?? '';
 
+  savedCatalogBeforeInspect = null;
   if (group === 'city') {
     catalogState.city = value as CityFilter;
     catalogState.area = '';
@@ -716,6 +729,7 @@ function handleFilterClick(button: HTMLButtonElement, catalog: HTMLElement): voi
 }
 
 function resetCatalog(catalog: HTMLElement): void {
+  savedCatalogBeforeInspect = null;
   catalogShowAll = false;
   catalogState.query = '';
   catalogState.city = SEMUA_KOTA;
@@ -741,6 +755,14 @@ function inspectCafeInCatalog(catalog: HTMLElement | null, cafeId: string): void
   if (!cafe) return;
 
   if (catalog) {
+    if (hasActiveFilters()) {
+      savedCatalogBeforeInspect = {
+        ...catalogState,
+        vibes: [...catalogState.vibes],
+        facilities: [...catalogState.facilities],
+        priceLevels: [...catalogState.priceLevels],
+      };
+    }
     catalogShowAll = true;
     catalogState.city = cafe.city;
     catalogState.area = '';
@@ -986,12 +1008,12 @@ function renderPickerQuick(picker: HTMLElement): void {
         areas.length === 0
           ? ''
           : [
-              `<button class="fchip" type="button" data-picker-area="" aria-pressed="${pickerArea === ''}">Semua kawasan</button>`,
-              ...areas.map(
-                (area) =>
-                  `<button class="fchip" type="button" data-picker-area="${esc(area)}" aria-pressed="${pickerArea === area}">${esc(area)}</button>`,
-              ),
-            ].join('');
+            `<button class="fchip" type="button" data-picker-area="" aria-pressed="${pickerArea === ''}">Semua kawasan</button>`,
+            ...areas.map(
+              (area) =>
+                `<button class="fchip" type="button" data-picker-area="${esc(area)}" aria-pressed="${pickerArea === area}">${esc(area)}</button>`,
+            ),
+          ].join('');
     }
   }
 
@@ -1136,6 +1158,8 @@ function setBucketOpen(open: boolean): void {
   bucket.classList.toggle('is-open', open);
   bucket.setAttribute('aria-hidden', String(!open));
   document.body.classList.toggle('bucket-open', open);
+  const mainEl = document.querySelector<HTMLElement>('[data-main]');
+  if (mainEl) mainEl.inert = open;
   document
     .querySelectorAll<HTMLElement>('[data-bucket-toggle], [data-bucket-open]')
     .forEach((button) => button.setAttribute('aria-expanded', String(open)));
@@ -1145,7 +1169,11 @@ function setBucketOpen(open: boolean): void {
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
     bucket.querySelector<HTMLElement>('.bucket__close')?.focus();
   } else if (bucketPreviousFocus) {
-    bucketPreviousFocus.focus();
+    if (bucketPreviousFocus.isConnected) {
+      bucketPreviousFocus.focus();
+    } else {
+      document.querySelector<HTMLElement>('[data-bucket-toggle]')?.focus();
+    }
     bucketPreviousFocus = null;
   }
 }
@@ -1402,6 +1430,7 @@ function initCafeUi(): void {
 
     const search = catalog.querySelector<HTMLInputElement>('[data-catalog-search]');
     search?.addEventListener('input', () => {
+      savedCatalogBeforeInspect = null;
       catalogShowAll = false;
       catalogState.query = search.value;
       syncCatalogUrl();
@@ -1412,6 +1441,7 @@ function initCafeUi(): void {
     const sortSelect = catalog.querySelector<HTMLSelectElement>('[data-catalog-sort]');
     sortSelect?.addEventListener('change', () => {
       const value = sortSelect.value;
+      savedCatalogBeforeInspect = null;
       catalogShowAll = false;
       catalogState.sort = (CAFE_SORTS as readonly string[]).includes(value)
         ? (value as CafeSort)
@@ -1428,11 +1458,18 @@ function initCafeUi(): void {
   }
 
   const backToTop = document.querySelector<HTMLButtonElement>('[data-back-to-top]');
+  const footer = document.querySelector<HTMLElement>('.site-footer');
   const updateBackToTop = (): void => {
-    if (backToTop) backToTop.hidden = window.scrollY < BACK_TO_TOP_THRESHOLD;
+    if (!backToTop) return;
+    const footerRect = footer?.getBoundingClientRect();
+    const footerInView = Boolean(
+      footerRect && footerRect.height > 0 && footerRect.top < window.innerHeight - 16,
+    );
+    backToTop.hidden = window.scrollY < BACK_TO_TOP_THRESHOLD || footerInView;
   };
   updateBackToTop();
   window.addEventListener('scroll', updateBackToTop, { passive: true });
+  window.addEventListener('resize', updateBackToTop, { passive: true });
 
   document.addEventListener('click', (event) => {
     const target = event.target;
@@ -1548,10 +1585,35 @@ function initCafeUi(): void {
       return;
     }
 
+    if (target.closest('[data-catalog-restore]') && catalog && savedCatalogBeforeInspect) {
+      const prev = savedCatalogBeforeInspect;
+      savedCatalogBeforeInspect = null;
+      catalogShowAll = false;
+      catalogState.query = prev.query;
+      catalogState.city = prev.city;
+      catalogState.area = prev.area;
+      catalogState.vibes = prev.vibes;
+      catalogState.facilities = prev.facilities;
+      catalogState.priceLevels = prev.priceLevels;
+      catalogState.openNow = prev.openNow;
+      catalogState.sort = prev.sort;
+
+      const searchEl = catalog.querySelector<HTMLInputElement>('[data-catalog-search]');
+      if (searchEl) searchEl.value = prev.query;
+      const sortEl = catalog.querySelector<HTMLSelectElement>('[data-catalog-sort]');
+      if (sortEl) sortEl.value = prev.sort;
+
+      syncCatalogUrl();
+      renderCatalog(catalog);
+      syncBucketControls();
+      return;
+    }
+
     const presetBtn = target.closest<HTMLButtonElement>('[data-catalog-preset]');
     if (presetBtn && catalog) {
       const preset = CATALOG_PRESETS.find((item) => item.id === presetBtn.dataset.catalogPreset);
       if (preset) {
+        savedCatalogBeforeInspect = null;
         applyPreset(preset);
         catalogShowAll = false;
         syncCatalogUrl();
@@ -1570,6 +1632,7 @@ function initCafeUi(): void {
 
     const clearChip = target.closest<HTMLButtonElement>('[data-clear-chip]');
     if (clearChip && catalog) {
+      savedCatalogBeforeInspect = null;
       const chipType = clearChip.dataset.clearChip;
       const chipVal = clearChip.dataset.clearValue ?? '';
       if (chipType === 'query') {
