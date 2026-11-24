@@ -3,14 +3,12 @@ import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 export const ALLOWED_CITIES = [
-  'Jakarta',
-  'Bandung',
-  'Yogyakarta',
-  'Surabaya',
-  'Medan',
-  'Makassar',
-  'Denpasar',
   'Pontianak',
+  'Jakarta',
+  'Yogyakarta',
+  'Bandung',
+  'Bogor',
+  'Surabaya',
 ];
 
 export const ALLOWED_VIBES = [
@@ -151,23 +149,112 @@ export function isIndonesiaCoord(lat, lng) {
   );
 }
 
+const CITY_CORRIDORS = {
+  Jakarta: [
+    { pattern: /kemang/i, label: 'Kemang' },
+    { pattern: /senopati|senayan/i, label: 'Senopati' },
+    { pattern: /blok\s*m|melawai/i, label: 'Blok M' },
+    { pattern: /menteng/i, label: 'Menteng' },
+    { pattern: /kuningan|rasuna\s*said|setiabudi/i, label: 'Kuningan' },
+    { pattern: /pantai\s*indah\s*kapuk|\bpik\b/i, label: 'PIK' },
+    { pattern: /tebet/i, label: 'Tebet' },
+    { pattern: /kebayoran|kby\./i, label: 'Kebayoran Baru' },
+    { pattern: /mampang/i, label: 'Mampang Prapatan' },
+  ],
+  Yogyakarta: [
+    { pattern: /malioboro|ps\.\s*kembang/i, label: 'Malioboro' },
+    { pattern: /prawirotaman/i, label: 'Prawirotaman' },
+    { pattern: /seturan/i, label: 'Seturan' },
+    { pattern: /kotabaru/i, label: 'Kotabaru' },
+    { pattern: /gejayan|affandi/i, label: 'Gejayan' },
+    { pattern: /palagan|ngaglik/i, label: 'Palagan' },
+    { pattern: /danurejan/i, label: 'Danurejan' },
+    { pattern: /jetis/i, label: 'Jetis' },
+    { pattern: /gondokusuman/i, label: 'Gondokusuman' },
+    { pattern: /mergangsan/i, label: 'Mergangsan' },
+    { pattern: /depok/i, label: 'Depok, Sleman' },
+  ],
+  Bandung: [
+    { pattern: /braga/i, label: 'Braga' },
+    { pattern: /dago|ir\.\s*h\.\s*juanda|lebak\s*siliwangi|lb\.\s*siliwangi/i, label: 'Dago' },
+    { pattern: /riau|martadinata|citarum/i, label: 'Riau' },
+    { pattern: /ciumbuleuit|kiputih|punclut/i, label: 'Ciumbuleuit' },
+    { pattern: /lembang/i, label: 'Lembang' },
+    { pattern: /buah\s*batu/i, label: 'Buah Batu' },
+    { pattern: /bandung\s*wetan/i, label: 'Bandung Wetan' },
+    { pattern: /cidadap/i, label: 'Cidadap' },
+    { pattern: /lengkong/i, label: 'Lengkong' },
+  ],
+  Bogor: [
+    { pattern: /surya\s*kencana|suryakencana/i, label: 'Surya Kencana' },
+    { pattern: /pajajaran/i, label: 'Pajajaran' },
+    { pattern: /sentul|babakan\s*madang/i, label: 'Sentul' },
+    { pattern: /taman\s*kencana|sempur|bincarung/i, label: 'Taman Kencana' },
+    { pattern: /baranangsiang|pakuan/i, label: 'Baranangsiang' },
+    { pattern: /tanah\s*sareal/i, label: 'Tanah Sareal' },
+    { pattern: /bogor\s*utara/i, label: 'Bogor Utara' },
+    { pattern: /bogor\s*tengah|paledang|gudang/i, label: 'Bogor Tengah' },
+    { pattern: /bogor\s*timur/i, label: 'Bogor Timur' },
+  ],
+  Surabaya: [
+    { pattern: /tunjungan/i, label: 'Tunjungan' },
+    { pattern: /gubeng/i, label: 'Gubeng' },
+    { pattern: /darmo|wonokromo/i, label: 'Darmo' },
+    { pattern: /pakuwon|citraland|lakarsantri|wiyung|surabaya\s*barat/i, label: 'Surabaya Barat' },
+    { pattern: /manyar|merr/i, label: 'Manyar' },
+    { pattern: /genteng/i, label: 'Genteng' },
+    { pattern: /sukomanunggal/i, label: 'Sukomanunggal' },
+  ],
+};
+
+function cleanAreaSegment(raw) {
+  return String(raw || '')
+    .replace(/^(kec\.|kecamatan|kel\.|kelurahan)\s+/i, '')
+    .replace(/\bKby\.\s*/gi, 'Kebayoran ')
+    .replace(/\bPrpt\.?/gi, 'Prapatan')
+    .replace(/\bLb\.\s*/gi, 'Lebak ')
+    .replace(/\bPs\.\s*/gi, 'Pasar ')
+    .replace(/\bSel\.?$/i, 'Selatan')
+    .replace(/\bBar\.?$/i, 'Barat')
+    .replace(/\bTim\.?$/i, 'Timur')
+    .replace(/\bUtr\.?$/i, 'Utara')
+    .replace(/\bTgr\.?$/i, 'Tenggara')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export function resolveArea(item, city) {
-  const combined = [item.street, item.borough, item.address].filter(Boolean).join(' ');
+  const combined = [item.title, item.street, item.borough, item.complete_address?.borough, item.address]
+    .filter(Boolean)
+    .join(' ');
   if (city === 'Pontianak') {
     for (const corridor of PONTIANAK_CORRIDORS) {
       if (corridor.pattern.test(combined)) return corridor.label;
     }
   }
 
-  const borough = String(item.borough || '')
-    .replace(/^(kec\.|kecamatan|kel\.|kelurahan)\s+/i, '')
-    .replace(/\bSel\.?$/i, 'Selatan')
-    .replace(/\bBar\.?$/i, 'Barat')
-    .replace(/\bTim\.?$/i, 'Timur')
-    .replace(/\bUtr\.?$/i, 'Utara')
-    .replace(/\bTgr\.?$/i, 'Tenggara')
-    .trim();
-  if (borough) return borough;
+  for (const corridor of CITY_CORRIDORS[city] || []) {
+    if (corridor.pattern.test(combined)) return corridor.label;
+  }
+
+  const candidates = [
+    item.borough,
+    item.complete_address?.borough,
+    ...String(item.address || '').split(','),
+  ];
+
+  for (const rawPart of candidates) {
+    const cleaned = cleanAreaSegment(rawPart);
+    if (
+      cleaned &&
+      !/^(RT\.|RW\.|Jl\.|Jalan|No\.|Lt\.|Blok|Block|Kav\.|Komp\.|Kawasan|Gedung|Kota|Kab\.|Kabupaten|DKI|DI\b|Daerah|Jawa|Kalimantan|\d)/i.test(
+        cleaned,
+      ) &&
+      cleaned.length <= 36
+    ) {
+      return cleaned;
+    }
+  }
 
   return city;
 }
@@ -272,7 +359,7 @@ export function parsePriceText(raw) {
     const unit = Boolean(rangeMatch[2] || rangeMatch[4]);
     const min = parsePriceNumber(rangeMatch[1], unit);
     const max = parsePriceNumber(rangeMatch[3], unit);
-    if (min && max && max >= min && min >= 2000 && max <= 1000000) {
+    if (min && max && max >= min && min >= 2000 && max <= 250000) {
       return { min, max };
     }
   }
@@ -280,7 +367,7 @@ export function parsePriceText(raw) {
   const singleMatch = text.match(/Rp\s*(\d{1,3}(?:[.,]\d{3})*|\d{1,3})\s*(rb|ribu|k)?/i);
   if (singleMatch) {
     const val = parsePriceNumber(singleMatch[1], Boolean(singleMatch[2]));
-    if (val && val >= 2000 && val <= 1000000) {
+    if (val && val >= 2000 && val <= 200000) {
       return { min: Math.max(5000, Math.round(val * 0.7)), max: Math.round(val * 1.3) };
     }
   }
@@ -457,9 +544,18 @@ function buildIndonesianCopy(name, area, city, vibes, facilities, category) {
   return { tagline, bestFor, description };
 }
 
+export function cleanCafeTitle(rawTitle) {
+  return String(rawTitle || '')
+    .replace(/^[\uFE00-\uFE0F\u200B-\u200D\u2600-\u27BF\s]+/g, '')
+    .replace(/\s*\|\s*The Best.*$/i, '')
+    .replace(/\s*-\s*Cafe\s*&\s*Coffee Shop\b.*$/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export function convertScrapedCafe(item, context) {
   const { city, menuByCid, priceByCid, usedIds, includeImages } = context;
-  const title = String(item?.title || '').trim();
+  const title = cleanCafeTitle(item?.title);
   if (!title) return { cafe: null, reason: 'missing_title' };
   if (item.permanently_closed) return { cafe: null, reason: 'permanently_closed' };
 

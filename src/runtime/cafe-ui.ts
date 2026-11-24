@@ -59,6 +59,14 @@ import {
   type BucketTab,
 } from '../lib/bucketlist';
 import { playPickerReveal, playPickerTick } from '../lib/sound';
+import {
+  addSuggestion,
+  buildSuggestionMailto,
+  formatSuggestionSummary,
+  loadSuggestions,
+  removeSuggestion,
+  type CafeSuggestion,
+} from '../lib/suggestions';
 
 const HTML_ENTITIES: Record<string, string> = {
   '&': '&amp;',
@@ -212,10 +220,6 @@ function renderAllCafeOfTheDay(containers: HTMLElement[]): void {
   }
 }
 
-function sampleBadgeMarkup(cafe: Cafe): string {
-  return cafe.city === 'Pontianak' ? '' : '<span class="cc__badge-sample">Data contoh</span>';
-}
-
 function renderCafeOfTheDay(container: HTMLElement): void {
   const now = new Date();
   codDateKey = getLocalDateKey(now);
@@ -233,7 +237,7 @@ function renderCafeOfTheDay(container: HTMLElement): void {
   container.innerHTML = `
     <div class="cod__head">
       <h2 class="sr-only">Kafe Pilihan Hari Ini</h2>
-      <span class="cod__kicker" aria-hidden="true"><i></i>Kafe Pilihan Hari Ini</span>
+      <span class="cod__kicker" aria-hidden="true">Kafe Pilihan Hari Ini</span>
       <span class="cod__date">${esc(getDailyLabel(now))}</span>
     </div>
     <article class="cod__card" style="--cod-accent:${esc(cafe.accentColor)}">
@@ -248,7 +252,7 @@ function renderCafeOfTheDay(container: HTMLElement): void {
       <div class="cod__body">
         <div class="cod__row">
           <span class="cod__area">${esc(cafe.city)} · ${esc(cafe.area)}</span>
-          <div class="cod__badges">${sampleBadgeMarkup(cafe)}<span class="cc__status${status.open ? ' is-open' : ''}"><i></i>${esc(status.label)}</span></div>
+          <div class="cod__badges"><span class="cc__status${status.open ? ' is-open' : ''}"><i></i>${esc(status.label)}</span></div>
         </div>
         <h3 class="cod__name">${esc(cafe.name)}</h3>
         <p class="cod__tag">${esc(cafe.tagline)}</p>
@@ -595,7 +599,7 @@ function renderCafeCard(
     <article class="cc" data-cafe-card="${esc(cafe.id)}" style="--cc-accent:${esc(cafe.accentColor)}"${hiddenExtra ? ' hidden' : ''}>
       <div class="cc__media" aria-hidden="true"><span class="cc__mono">${esc(getInitials(cafe.name))}</span>${cafePhotoMarkup(cafe)}</div>
       <div class="cc__main">
-        <div class="cc__topline"><span class="cc__area">${esc(cafe.city)} · ${esc(cafe.area)}</span>${sampleBadgeMarkup(cafe)}${statusMarkup(cafe, now)}</div>
+        <div class="cc__topline"><span class="cc__area">${esc(cafe.city)} · ${esc(cafe.area)}</span>${statusMarkup(cafe, now)}</div>
         <h3 class="cc__name">${esc(cafe.name)}</h3>
         <p class="cc__tagline">${esc(cafe.tagline)}</p>
         <div class="cc__meta"><span><b>★ ${esc(cafe.rating.toFixed(1))}</b></span>${cafe.reviewCount > 0 ? `<span>${esc(formatReviewCount(cafe.reviewCount))} ulasan</span>` : ''}<span>${esc(PRICE_LEVEL_SHORT[cafe.priceLevel])}</span><span>${esc(formatHours(cafe))}</span></div>
@@ -824,7 +828,7 @@ function pickerPool(): Cafe[] {
 
 function geolocationErrorMessage(code: number | undefined): string {
   if (code === 1) {
-    return 'Izin lokasi ditolak. Aktifkan izin lokasi di browser atau beralih ke Atur lokasimu.';
+    return 'Izin lokasi ditolak. Aktifkan izin lokasi di perangkat atau beralih ke Atur lokasimu.';
   }
   if (code === 2) {
     return 'Lokasi perangkat tidak dapat ditentukan sekarang. Coba lagi atau beralih ke Atur lokasimu.';
@@ -842,7 +846,7 @@ function requestDeviceLocation(picker: HTMLElement): void {
   if (typeof navigator.geolocation?.getCurrentPosition !== 'function') {
     pickerGeoStatus = 'error';
     pickerGeoError =
-      'Perangkat atau browser ini tidak mendukung akses lokasi. Gunakan pilihan Atur lokasimu.';
+      'Perangkat ini belum mendukung akses lokasi. Gunakan pilihan Atur lokasimu.';
     renderPickerQuick(picker);
     renderPickerHint(picker);
     return;
@@ -1049,7 +1053,6 @@ function renderPickerCard(cafe: Cafe, now: Date): string {
       <div class="rcard__body">
         <div class="rcard__top">
           <span class="rcard__area">${esc(cafe.city)} · ${esc(cafe.area)}</span>
-          ${sampleBadgeMarkup(cafe)}
           <span class="cc__status${status.open ? ' is-open' : ''}"><i></i>${esc(status.label)}</span>
         </div>
         <h3 class="rcard__name">${esc(cafe.name)}</h3>
@@ -1351,7 +1354,7 @@ async function handleCafeShare(cafeId: string, button: HTMLButtonElement): Promi
     showToast(
       ok
         ? `Tautan ${cafe.name} disalin.`
-        : 'Gagal menyalin tautan. Coba salin dari bilah alamat.',
+        : 'Gagal menyalin tautan. Silakan salin alamat halaman secara manual.',
     );
   } finally {
     button.disabled = false;
@@ -1380,8 +1383,59 @@ async function handleBucketShare(button: HTMLButtonElement): Promise<void> {
   }
 }
 
+let activeCatalogTab: 'directory' | 'suggest' = 'directory';
+let lastSubmittedSuggestion: CafeSuggestion | null = null;
+
+function setCatalogTab(catalog: HTMLElement | null, tab: 'directory' | 'suggest'): void {
+  if (!catalog) return;
+  activeCatalogTab = tab;
+  catalog.querySelectorAll<HTMLButtonElement>('[data-catalog-tab]').forEach((btn) => {
+    const isActive = btn.dataset.catalogTab === tab;
+    btn.setAttribute('aria-selected', String(isActive));
+    btn.tabIndex = isActive ? 0 : -1;
+  });
+  catalog.querySelectorAll<HTMLElement>('[data-catalog-pane]').forEach((pane) => {
+    pane.hidden = pane.dataset.catalogPane !== tab;
+  });
+}
+
+function renderSuggestHistory(catalog: HTMLElement | null): void {
+  if (!catalog) return;
+  const items = loadSuggestions();
+  const countBadge = catalog.querySelector<HTMLElement>('[data-suggest-count]');
+  const emptyEl = catalog.querySelector<HTMLElement>('[data-suggest-empty]');
+  const listEl = catalog.querySelector<HTMLElement>('[data-suggest-list]');
+
+  if (countBadge) {
+    countBadge.textContent = String(items.length);
+    countBadge.hidden = items.length === 0;
+  }
+  if (emptyEl) emptyEl.hidden = items.length > 0;
+  if (!listEl) return;
+
+  listEl.innerHTML = items
+    .map(
+      (item) => `
+      <li class="suggest-item">
+        <div class="suggest-item__top">
+          <span class="suggest-item__name">${esc(item.name)}</span>
+          <span class="suggest-item__city">${esc(item.city)}</span>
+        </div>
+        ${item.area ? `<p class="suggest-item__meta">${esc(item.area)}</p>` : ''}
+        ${item.notes ? `<p class="suggest-item__meta">${esc(item.notes)}</p>` : ''}
+        <div class="suggest-item__actions">
+          <a class="suggest-item__btn" href="${esc(buildSuggestionMailto(item))}">Kirim Email</a>
+          <button class="suggest-item__btn" type="button" data-suggest-copy-id="${esc(item.id)}">Salin</button>
+          <button class="suggest-item__btn" type="button" data-suggest-remove="${esc(item.id)}">Hapus</button>
+        </div>
+      </li>`,
+    )
+    .join('');
+}
+
 function selectCatalogCity(catalog: HTMLElement | null, city: City): void {
   if (catalog) {
+    setCatalogTab(catalog, 'directory');
     catalogState.city = city;
     catalogState.area = '';
     syncCatalogUrl();
@@ -1449,6 +1503,46 @@ function initCafeUi(): void {
       syncCatalogUrl();
       renderCatalog(catalog);
       syncBucketControls();
+    });
+
+    renderSuggestHistory(catalog);
+    const suggestForm = catalog.querySelector<HTMLFormElement>('[data-suggest-form]');
+    suggestForm?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const formData = new FormData(suggestForm);
+      const name = String(formData.get('name') ?? '').trim();
+      const city = String(formData.get('city') ?? '').trim();
+      const area = String(formData.get('area') ?? '').trim();
+      const link = String(formData.get('link') ?? '').trim();
+      const notes = String(formData.get('notes') ?? '').trim();
+
+      const errorEl = catalog.querySelector<HTMLElement>('[data-suggest-error]');
+      const successBox = catalog.querySelector<HTMLElement>('[data-suggest-success]');
+      const successMsg = catalog.querySelector<HTMLElement>('[data-suggest-success-msg]');
+      const mailtoLink = catalog.querySelector<HTMLAnchorElement>('[data-suggest-mailto]');
+
+      if (!name || !city) {
+        if (errorEl) {
+          errorEl.textContent = !name
+            ? 'Isi nama kafe yang ingin kamu usulkan.'
+            : 'Pilih kota lokasi kafe terlebih dahulu.';
+          errorEl.hidden = false;
+        }
+        return;
+      }
+
+      if (errorEl) errorEl.hidden = true;
+      const saved = addSuggestion({ name, city, area, link, notes });
+      lastSubmittedSuggestion = saved;
+      renderSuggestHistory(catalog);
+
+      if (successMsg) {
+        successMsg.textContent = `${saved.name} (${saved.city}) sudah dicatat. Klik "Kirim via Email" atau salin detailnya untuk dikirim ke tim Nongki.`;
+      }
+      if (mailtoLink) mailtoLink.href = buildSuggestionMailto(saved);
+      if (successBox) successBox.hidden = false;
+      suggestForm.hidden = true;
+      showToast(`Usulan ${saved.name} disiapkan.`);
     });
   }
 
@@ -1820,10 +1914,77 @@ function initCafeUi(): void {
         event.preventDefault();
         selectCatalogCity(catalog, city);
       }
+      return;
+    }
+
+    const catalogTabBtn = target.closest<HTMLButtonElement>('[data-catalog-tab]');
+    if (catalogTabBtn && catalog) {
+      const tab = catalogTabBtn.dataset.catalogTab === 'suggest' ? 'suggest' : 'directory';
+      setCatalogTab(catalog, tab);
+      return;
+    }
+
+    if (target.closest('[data-open-suggest]') && catalog) {
+      event.preventDefault();
+      setCatalogTab(catalog, 'suggest');
+      scrollToSection(catalog);
+      window.setTimeout(() => {
+        catalog.querySelector<HTMLInputElement>('#suggest-name')?.focus();
+      }, 60);
+      return;
+    }
+
+    if (target.closest('[data-suggest-copy]') && lastSubmittedSuggestion) {
+      void copyText(formatSuggestionSummary(lastSubmittedSuggestion)).then((ok) => {
+        showToast(ok ? 'Detail usulan disalin.' : 'Gagal menyalin detail usulan.');
+      });
+      return;
+    }
+
+    if (target.closest('[data-suggest-new]') && catalog) {
+      const form = catalog.querySelector<HTMLFormElement>('[data-suggest-form]');
+      const successBox = catalog.querySelector<HTMLElement>('[data-suggest-success]');
+      if (form) {
+        form.reset();
+        form.hidden = false;
+      }
+      if (successBox) successBox.hidden = true;
+      catalog.querySelector<HTMLInputElement>('#suggest-name')?.focus();
+      return;
+    }
+
+    const suggestCopyIdBtn = target.closest<HTMLButtonElement>('[data-suggest-copy-id]');
+    if (suggestCopyIdBtn) {
+      const item = loadSuggestions().find((entry) => entry.id === suggestCopyIdBtn.dataset.suggestCopyId);
+      if (item) {
+        void copyText(formatSuggestionSummary(item)).then((ok) => {
+          showToast(ok ? `Usulan ${item.name} disalin.` : 'Gagal menyalin usulan.');
+        });
+      }
+      return;
+    }
+
+    const suggestRemoveBtn = target.closest<HTMLButtonElement>('[data-suggest-remove]');
+    if (suggestRemoveBtn && catalog) {
+      removeSuggestion(suggestRemoveBtn.dataset.suggestRemove ?? '');
+      renderSuggestHistory(catalog);
+      showToast('Usulan dihapus.');
     }
   });
 
   document.addEventListener('keydown', (event) => {
+    const catalogTabTarget =
+      event.target instanceof Element ? event.target.closest<HTMLButtonElement>('[data-catalog-tab]') : null;
+    if (catalogTabTarget && catalog && ['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+      event.preventDefault();
+      let nextTab: 'directory' | 'suggest' = activeCatalogTab === 'directory' ? 'suggest' : 'directory';
+      if (event.key === 'Home') nextTab = 'directory';
+      else if (event.key === 'End') nextTab = 'suggest';
+      setCatalogTab(catalog, nextTab);
+      catalog.querySelector<HTMLButtonElement>(`[data-catalog-tab="${nextTab}"]`)?.focus();
+      return;
+    }
+
     if (
       event.key === '/' &&
       !event.ctrlKey &&
@@ -1899,6 +2060,8 @@ function initCafeUi(): void {
     activeTab = 'wishlist';
     setBucketOpen(true);
     renderBucketlist();
+  } else if (window.location.hash === '#usulkan-kafe' && catalog) {
+    setCatalogTab(catalog, 'suggest');
   }
 }
 

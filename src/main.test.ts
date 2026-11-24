@@ -107,7 +107,7 @@ describe('Nongki Platform', () => {
     const cityButtons = Array.from(
       document.querySelectorAll<HTMLButtonElement>('[data-filter-city] button'),
     );
-    expect(cityButtons.length).toBeGreaterThanOrEqual(8);
+    expect(cityButtons.length).toBe(7);
 
     const pontianakBtn = cityButtons.find((btn) => btn.textContent?.trim().startsWith('Pontianak'));
     expect(pontianakBtn).toBeDefined();
@@ -222,7 +222,7 @@ describe('Nongki Platform', () => {
     const susanLink = document.querySelector<HTMLAnchorElement>('.rs__from[data-susan-link]')!;
 
     try {
-      expect(susanLink.dataset.selectCity).toBe('Jakarta');
+      expect(susanLink.dataset.selectCity).toBe('Pontianak');
 
       const totalCafes = CAFES_DATA.length;
       const bandungCount = CAFES_DATA.filter((c) => c.city === 'Bandung').length;
@@ -234,7 +234,7 @@ describe('Nongki Platform', () => {
       expect(countEl.textContent).toContain(`${bandungCount} dari ${totalCafes} kafe`);
       expect(window.location.search).toContain('kota=Bandung');
     } finally {
-      document.querySelector<HTMLElement>('.rs__bag[data-select-city="Jakarta"]')?.click();
+      document.querySelector<HTMLElement>('.rs__bag[data-select-city="Pontianak"]')?.click();
       document.querySelector<HTMLButtonElement>('[data-catalog-reset]')?.click();
       window.history.replaceState(null, '', '/');
     }
@@ -248,9 +248,9 @@ describe('Nongki Platform', () => {
       activeUfoBag.dispatchEvent(
         new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
       );
-      const jakartaCount = CAFES_DATA.filter((c) => c.city === 'Jakarta').length;
-      expect(countEl.textContent).toContain(`${jakartaCount} dari ${CAFES_DATA.length} kafe`);
-      expect(window.location.search).toContain('kota=Jakarta');
+      const pontianakCount = CAFES_DATA.filter((c) => c.city === 'Pontianak').length;
+      expect(countEl.textContent).toContain(`${pontianakCount} dari ${CAFES_DATA.length} kafe`);
+      expect(window.location.search).toContain('kota=Pontianak');
     } finally {
       document.querySelector<HTMLButtonElement>('[data-catalog-reset]')?.click();
       window.history.replaceState(null, '', '/');
@@ -649,7 +649,7 @@ describe('Nongki Platform', () => {
       );
       expect(visibleAfter.length).toBe(CAFES_DATA.length);
 
-      // Quick preset + active removable chip + Data contoh badge on non-Pontianak cards
+      // Quick preset + active removable chip + 6 scraped cities rendered without Data contoh badge
       const hematPreset = document.querySelector<HTMLButtonElement>('[data-catalog-preset="hemat"]')!;
       hematPreset.click();
       expect(hematPreset.getAttribute('aria-pressed')).toBe('true');
@@ -660,10 +660,16 @@ describe('Nongki Platform', () => {
       priceClearChip.click();
       expect(hematPreset.getAttribute('aria-pressed')).toBe('false');
 
+      const cityButtons = Array.from(
+        document.querySelectorAll<HTMLButtonElement>('#direktori [data-filter-city] button[data-filter-group="city"]'),
+      ).map((btn) => btn.dataset.filterValue);
+      expect(cityButtons).toEqual(['Semua Kota', 'Pontianak', 'Jakarta', 'Yogyakarta', 'Bandung', 'Bogor', 'Surabaya']);
+
       const jakartaCard = Array.from(document.querySelectorAll<HTMLElement>('#direktori .cc')).find((card) =>
         card.textContent?.includes('Jakarta'),
       );
-      expect(jakartaCard?.textContent).toContain('Data contoh');
+      expect(jakartaCard).toBeDefined();
+      expect(jakartaCard?.textContent).not.toContain('Data contoh');
 
       // Bucketlist: save item, switch tab via ArrowRight, and require 2 clicks to reset
       const firstSave = document.querySelector<HTMLButtonElement>('#direktori [data-cafe-save]')!;
@@ -709,6 +715,52 @@ describe('Nongki Platform', () => {
       resetBtn.click();
       window.history.replaceState(null, '', '/');
     }
+  });
+
+  it('uses support@nongki.me and supports the Usulkan Kafe tab workflow', () => {
+    expect(document.body.innerHTML).toContain('support@nongki.me');
+    expect(document.body.innerHTML).not.toContain('hello@nongki.id');
+
+    const directoryTab = document.querySelector<HTMLButtonElement>('[data-catalog-tab="directory"]')!;
+    const suggestTab = document.querySelector<HTMLButtonElement>('[data-catalog-tab="suggest"]')!;
+    const directoryPane = document.querySelector<HTMLElement>('[data-catalog-pane="directory"]')!;
+    const suggestPane = document.querySelector<HTMLElement>('[data-catalog-pane="suggest"]')!;
+
+    expect(directoryTab.getAttribute('aria-selected')).toBe('true');
+    expect(suggestPane.hidden).toBe(true);
+
+    suggestTab.click();
+    expect(suggestTab.getAttribute('aria-selected')).toBe('true');
+    expect(directoryPane.hidden).toBe(true);
+    expect(suggestPane.hidden).toBe(false);
+
+    const form = suggestPane.querySelector<HTMLFormElement>('[data-suggest-form]')!;
+    const errorEl = suggestPane.querySelector<HTMLElement>('[data-suggest-error]')!;
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    expect(errorEl.hidden).toBe(false);
+
+    suggestPane.querySelector<HTMLInputElement>('#suggest-name')!.value = 'Kopi Kebon Bogor';
+    suggestPane.querySelector<HTMLSelectElement>('#suggest-city')!.value = 'Bogor';
+    suggestPane.querySelector<HTMLInputElement>('#suggest-area')!.value = 'Taman Kencana';
+    suggestPane.querySelector<HTMLTextAreaElement>('#suggest-notes')!.value = 'Ada Wi-Fi dan area taman';
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+
+    expect(errorEl.hidden).toBe(true);
+    const successBox = suggestPane.querySelector<HTMLElement>('[data-suggest-success]')!;
+    expect(successBox.hidden).toBe(false);
+    const mailtoHref = suggestPane.querySelector<HTMLAnchorElement>('[data-suggest-mailto]')!.getAttribute('href')!;
+    expect(mailtoHref.startsWith('mailto:support@nongki.me?subject=')).toBe(true);
+    expect(suggestPane.querySelector('[data-suggest-list]')?.textContent).toContain('Kopi Kebon Bogor');
+
+    const removeBtn = suggestPane.querySelector<HTMLButtonElement>('[data-suggest-remove]')!;
+    removeBtn.click();
+    expect(suggestPane.querySelector('[data-suggest-list]')?.children.length).toBe(0);
+
+    suggestTab.focus();
+    suggestTab.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+    expect(directoryTab.getAttribute('aria-selected')).toBe('true');
+    expect(directoryPane.hidden).toBe(false);
+    expect(suggestPane.hidden).toBe(true);
   });
 });
 

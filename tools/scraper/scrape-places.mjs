@@ -73,12 +73,12 @@ function loadExistingKeys(outputPath) {
   const rows = text.startsWith('[')
     ? JSON.parse(text)
     : text.split(/\r?\n/).filter(Boolean).map((line) => {
-        try {
-          return JSON.parse(line);
-        } catch {
-          return null;
-        }
-      });
+      try {
+        return JSON.parse(line);
+      } catch {
+        return null;
+      }
+    });
 
   for (const row of rows) {
     if (!row) continue;
@@ -349,7 +349,7 @@ async function extractPlaceDetails(page, candidate) {
       .locator('button[data-item-id="oh"], div[jsaction*="openhours"] button, button[aria-label*="Jam buka"]')
       .first();
     if ((await hoursToggle.count()) > 0) {
-      await hoursToggle.click().catch(() => {});
+      await hoursToggle.click().catch(() => { });
       await page.waitForTimeout(700);
       const expandedHours = await page.evaluate(() => {
         const hours = {};
@@ -374,7 +374,7 @@ async function extractPlaceDetails(page, candidate) {
   for (let i = 0; i < tabCount; i += 1) {
     const txt = ((await tabs.nth(i).innerText().catch(() => '')) || '').trim();
     if (/^(Tentang|About)$/i.test(txt)) {
-      await tabs.nth(i).click().catch(() => {});
+      await tabs.nth(i).click().catch(() => { });
       await page.waitForTimeout(900);
       about = await page.evaluate(() => {
         const groups = [];
@@ -409,6 +409,34 @@ async function extractPlaceDetails(page, candidate) {
     addrParts[1] ||
     '';
 
+  const inferredCity =
+    addrParts.find((part) => /^(kota|kabupaten|kab\.)\s+/i.test(part)) ||
+    (/jakarta/i.test(baseInfo.address)
+      ? 'Jakarta'
+      : /yogyakarta/i.test(baseInfo.address)
+        ? 'Kota Yogyakarta'
+        : /bandung/i.test(baseInfo.address)
+          ? 'Kota Bandung'
+          : /bogor/i.test(baseInfo.address)
+            ? 'Kota Bogor'
+            : /surabaya/i.test(baseInfo.address)
+              ? 'Kota Surabaya'
+              : /pontianak/i.test(baseInfo.address)
+                ? 'Kota Pontianak'
+                : '');
+
+  const inferredState = /kalimantan barat/i.test(baseInfo.address)
+    ? 'Kalimantan Barat'
+    : /jakarta/i.test(baseInfo.address)
+      ? 'DKI Jakarta'
+      : /yogyakarta/i.test(baseInfo.address)
+        ? 'DI Yogyakarta'
+        : /jawa barat|bandung|bogor/i.test(baseInfo.address)
+          ? 'Jawa Barat'
+          : /jawa timur|surabaya/i.test(baseInfo.address)
+            ? 'Jawa Timur'
+            : '';
+
   return {
     cid,
     place_id: '',
@@ -419,8 +447,8 @@ async function extractPlaceDetails(page, candidate) {
     complete_address: {
       borough,
       street,
-      city: /pontianak/i.test(baseInfo.address) ? 'Kota Pontianak' : '',
-      state: 'Kalimantan Barat',
+      city: inferredCity,
+      state: inferredState,
     },
     latitude,
     longitude,
