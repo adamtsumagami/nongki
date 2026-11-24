@@ -214,8 +214,10 @@ describe('tools/scraper/export-cafes', () => {
     expect(coverage.withImage).toBe(1);
 
     const [first, second] = cafes;
-    expect(first.id).toBe('kedai-uji-coba');
-    expect(second.id).toBe('kedai-uji-coba-2');
+    expect(first.id).toBe('kedai-uji-coba-purnama');
+    expect(first.name).toBe('Kedai Uji Coba (Purnama)');
+    expect(second.id).toBe('kedai-uji-coba-ahmad-yani');
+    expect(second.name).toBe('Kedai Uji Coba (Ahmad Yani)');
     expect(first.area).toBe('Purnama');
     expect(first.opensAt).toBe('08:00');
     expect(first.closesAt).toBe('23:00');

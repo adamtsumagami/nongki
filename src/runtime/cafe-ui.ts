@@ -652,7 +652,10 @@ function renderCatalog(catalog: HTMLElement): void {
     openNow: catalogState.openNow,
     now,
   });
-  const results = sortCafes(filtered, catalogState.sort, now);
+  const sortedResults = sortCafes(filtered, catalogState.sort, now);
+  const inspectedMatch =
+    inspectedCafeId !== null ? sortedResults.filter((cafe) => cafe.id === inspectedCafeId) : [];
+  const results = inspectedMatch.length > 0 ? inspectedMatch : sortedResults;
   const singleSearchMatch = results.length === 1 && catalogState.query.trim().length > 0;
 
   syncCatalogChips(catalog);
@@ -711,6 +714,7 @@ function handleFilterClick(button: HTMLButtonElement, catalog: HTMLElement): voi
   const group = button.dataset.filterGroup;
   const value = button.dataset.filterValue ?? '';
 
+  inspectedCafeId = null;
   savedCatalogBeforeInspect = null;
   if (group === 'city') {
     catalogState.city = value as CityFilter;
@@ -733,6 +737,7 @@ function handleFilterClick(button: HTMLButtonElement, catalog: HTMLElement): voi
 }
 
 function resetCatalog(catalog: HTMLElement): void {
+  inspectedCafeId = null;
   savedCatalogBeforeInspect = null;
   catalogShowAll = false;
   catalogState.query = '';
@@ -768,6 +773,8 @@ function inspectCafeInCatalog(catalog: HTMLElement | null, cafeId: string): void
       };
     }
     catalogShowAll = true;
+    inspectedCafeId = cafe.id;
+    setCatalogTab(catalog, 'directory');
     catalogState.city = cafe.city;
     catalogState.area = '';
     catalogState.query = cafe.name;
@@ -1385,6 +1392,7 @@ async function handleBucketShare(button: HTMLButtonElement): Promise<void> {
 
 let activeCatalogTab: 'directory' | 'suggest' = 'directory';
 let lastSubmittedSuggestion: CafeSuggestion | null = null;
+let inspectedCafeId: string | null = null;
 
 function setCatalogTab(catalog: HTMLElement | null, tab: 'directory' | 'suggest'): void {
   if (!catalog) return;
@@ -1484,6 +1492,7 @@ function initCafeUi(): void {
 
     const search = catalog.querySelector<HTMLInputElement>('[data-catalog-search]');
     search?.addEventListener('input', () => {
+      inspectedCafeId = null;
       savedCatalogBeforeInspect = null;
       catalogShowAll = false;
       catalogState.query = search.value;
@@ -1495,6 +1504,7 @@ function initCafeUi(): void {
     const sortSelect = catalog.querySelector<HTMLSelectElement>('[data-catalog-sort]');
     sortSelect?.addEventListener('change', () => {
       const value = sortSelect.value;
+      inspectedCafeId = null;
       savedCatalogBeforeInspect = null;
       catalogShowAll = false;
       catalogState.sort = (CAFE_SORTS as readonly string[]).includes(value)
@@ -1581,6 +1591,7 @@ function initCafeUi(): void {
     }
 
     if (target.closest('[data-catalog-clear]') && catalog) {
+      inspectedCafeId = null;
       catalogState.query = '';
       const search = catalog.querySelector<HTMLInputElement>('[data-catalog-search]');
       if (search) {
@@ -1681,6 +1692,7 @@ function initCafeUi(): void {
 
     if (target.closest('[data-catalog-restore]') && catalog && savedCatalogBeforeInspect) {
       const prev = savedCatalogBeforeInspect;
+      inspectedCafeId = null;
       savedCatalogBeforeInspect = null;
       catalogShowAll = false;
       catalogState.query = prev.query;
@@ -1707,6 +1719,7 @@ function initCafeUi(): void {
     if (presetBtn && catalog) {
       const preset = CATALOG_PRESETS.find((item) => item.id === presetBtn.dataset.catalogPreset);
       if (preset) {
+        inspectedCafeId = null;
         savedCatalogBeforeInspect = null;
         applyPreset(preset);
         catalogShowAll = false;
@@ -1726,6 +1739,7 @@ function initCafeUi(): void {
 
     const clearChip = target.closest<HTMLButtonElement>('[data-clear-chip]');
     if (clearChip && catalog) {
+      inspectedCafeId = null;
       savedCatalogBeforeInspect = null;
       const chipType = clearChip.dataset.clearChip;
       const chipVal = clearChip.dataset.clearValue ?? '';

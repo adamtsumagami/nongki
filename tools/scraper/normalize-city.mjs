@@ -43,13 +43,20 @@ function readJsonl(filePath) {
 }
 
 function dedupeKey(item) {
-  return String(item.cid || item.place_id || item.link || item.title || '').trim();
+  if (item.cid) return `cid:${String(item.cid).trim()}`;
+  if (item.place_id) return `pid:${String(item.place_id).trim()}`;
+  if (item.link) return `url:${String(item.link).split('?')[0].trim()}`;
+  const lat = Number(item.latitude || 0).toFixed(4);
+  const lng = Number(item.longitude || 0).toFixed(4);
+  return `${String(item.title || '').trim()}|${lat}|${lng}`;
 }
 
 function isCoffeePlace(item) {
   const hay = [item.title, item.category, ...(item.categories || [])].join(' ');
-  // Exclude convenience store kiosks or non-cafe chains
-  if (/\b(indomaret|alfamart|spbu|pertamina|point\s*coffee|point\s*cafe)\b/i.test(hay)) return false;
+  // Exclude convenience store kiosks and obvious non-cafe restaurants
+  if (/\b(indomaret|alfamart|spbu|pertamina|point\s*coffe+e?|point\s*cafe|semangkuk\s*kolagen)\b/i.test(hay)) {
+    return false;
+  }
   return true;
 }
 
@@ -106,7 +113,10 @@ for (const item of items) {
 }
 
 const normalized = [...seen.values()].sort(
-  (a, b) => Number(b.review_count || 0) - Number(a.review_count || 0) || String(a.title || '').localeCompare(String(b.title || '')),
+  (a, b) =>
+    Number(b.review_count || 0) - Number(a.review_count || 0) ||
+    Number(b.review_rating || 0) - Number(a.review_rating || 0) ||
+    String(a.title || '').localeCompare(String(b.title || '')),
 );
 
 fs.mkdirSync(path.dirname(path.resolve(args.output)), { recursive: true });

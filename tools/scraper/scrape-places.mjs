@@ -5,6 +5,7 @@ import { chromium } from 'playwright-core';
 function parseArgs(argv) {
   const opts = {
     queries: 'tools/scraper/queries-pontianak.txt',
+    urls: '',
     output: 'tools/scraper/output/pontianak-raw.json',
     profileDir: 'tools/scraper/chrome-profile',
     perQuery: 15,
@@ -14,15 +15,17 @@ function parseArgs(argv) {
 
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
-    if (arg === '--queries' && argv[i + 1]) opts.queries = argv[++i];
-    else if (arg === '--output' && argv[i + 1]) opts.output = argv[++i];
-    else if (arg === '--profile-dir' && argv[i + 1]) opts.profileDir = argv[++i];
-    else if (arg === '--per-query' && argv[i + 1]) opts.perQuery = Number(argv[++i]);
-    else if (arg === '--max-places' && argv[i + 1]) opts.maxPlaces = Number(argv[++i]);
-    else if (arg === '--query-limit' && argv[i + 1]) opts.queryLimit = Number(argv[++i]);
+    if (arg === '--queries' && argv[++i]) opts.queries = argv[i];
+    else if (arg === '--urls' && argv[++i]) opts.urls = argv[i];
+    else if (arg === '--output' && argv[++i]) opts.output = argv[i];
+    else if (arg === '--profile-dir' && argv[++i]) opts.profileDir = argv[i];
+    else if (arg === '--per-query' && argv[++i]) opts.perQuery = Number(argv[i]);
+    else if (arg === '--max-places' && argv[++i]) opts.maxPlaces = Number(argv[i]);
+    else if (arg === '--query-limit' && argv[++i]) opts.queryLimit = Number(argv[i]);
     else if (arg === '--help' || arg === '-h') {
       console.log(`Usage: node tools/scraper/scrape-places.mjs [options]
   --queries <path>     Query list file (default: tools/scraper/queries-pontianak.txt)
+  --urls <path>        Optional direct Google Maps URLs file (supports maps.app.goo.gl)
   --output <path>      Output JSONL file (default: tools/scraper/output/pontianak-raw.json)
   --profile-dir <path> Persistent browser profile dir (default: tools/scraper/chrome-profile)
   --per-query <n>      Max place links collected per query (default: 15)
@@ -32,6 +35,22 @@ function parseArgs(argv) {
     }
   }
   return opts;
+}
+
+async function resolveShortMapsUrl(rawUrl) {
+  const trimmed = String(rawUrl || '').trim();
+  if (!trimmed) return '';
+  if (!/maps\.app\.goo\.gl|goo\.gl\/maps/i.test(trimmed)) return trimmed;
+  try {
+    const res = await fetch(trimmed, {
+      method: 'GET',
+      redirect: 'follow',
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+    });
+    return res.url || trimmed;
+  } catch {
+    return trimmed;
+  }
 }
 
 function findBrowserExecutable() {
@@ -154,7 +173,11 @@ async function collectPlaceLinksForQuery(page, query, limit) {
     return Array.from(collected.values());
   }
 
-  for (let round = 0; round < 5 && collected.size < limit; round += 1) {
+  const maxRounds = Math.min(28, Math.max(8, Math.ceil(limit * 0.9)));
+  let stagnantRounds = 0;
+
+  for (let round = 0; round < maxRounds && collected.size < limit; round += 1) {
+    const prevSize = collected.size;
     const anchors = await page.evaluate(() => {
       return Array.from(document.querySelectorAll('div[role="feed"] a[href*="/maps/place/"]')).map((a) => {
         const card = a.closest('div[jsaction]')?.parentElement || a.parentElement;
@@ -196,11 +219,19 @@ async function collectPlaceLinksForQuery(page, query, limit) {
     }
 
     if (collected.size >= limit) break;
-    await page.evaluate(() => {
+    if (collected.size === prevSize) stagnantRounds += 1;
+    else stagnantRounds = 0;
+
+    const reachedEnd = await page.evaluate(() => {
       const el = document.querySelector('div[role="feed"]');
-      if (el) el.scrollTop += 1600;
+      if (!el) return true;
+      const text = el.innerText || '';
+      if (/mencapai akhir daftar|reached the end of the list/i.test(text)) return true;
+      el.scrollTop += 2200;
+      return false;
     });
-    await page.waitForTimeout(1400);
+    if (reachedEnd || stagnantRounds >= 3) break;
+    await page.waitForTimeout(1200);
   }
 
   return Array.from(collected.values());
@@ -376,6 +407,13 @@ async function extractPlaceDetails(page, candidate) {
     if (/^(Tentang|About)$/i.test(txt)) {
       await tabs.nth(i).click().catch(() => { });
       await page.waitForTimeout(900);
+      await page.evaluate(() => {
+        const scroller =
+          document.querySelector('div[role="main"] div.m6QErb.DxyBCb') ||
+          document.querySelector('div[role="main"]');
+        if (scroller) scroller.scrollTop += 1200;
+      });
+      await page.waitForTimeout(450);
       about = await page.evaluate(() => {
         const groups = [];
         const headings = Array.from(document.querySelectorAll('div[role="main"] h2'));
@@ -470,20 +508,31 @@ async function extractPlaceDetails(page, candidate) {
 async function main() {
   const opts = parseArgs(process.argv.slice(2));
   const queriesPath = resolve(opts.queries);
+  const urlsPath = opts.urls ? resolve(opts.urls) : '';
   const outputPath = resolve(opts.output);
   const profileDir = resolve(opts.profileDir);
 
-  if (!existsSync(queriesPath)) {
-    throw new Error(`Queries file not found: ${queriesPath}`);
+  if (!existsSync(queriesPath) && (!urlsPath || !existsSync(urlsPath))) {
+    throw new Error(`Queries or URLs file not found: ${queriesPath}`);
   }
 
-  let queries = readFileSync(queriesPath, 'utf8')
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter(Boolean);
+  let queries = existsSync(queriesPath)
+    ? readFileSync(queriesPath, 'utf8')
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter((l) => l && !l.startsWith('#'))
+    : [];
   if (opts.queryLimit && opts.queryLimit > 0) {
     queries = queries.slice(0, opts.queryLimit);
   }
+
+  const directUrls =
+    urlsPath && existsSync(urlsPath)
+      ? readFileSync(urlsPath, 'utf8')
+          .split(/\r?\n/)
+          .map((l) => l.trim())
+          .filter((l) => l && !l.startsWith('#'))
+      : [];
 
   mkdirSync(dirname(outputPath), { recursive: true });
   mkdirSync(profileDir, { recursive: true });
@@ -491,7 +540,7 @@ async function main() {
   const existingKeys = loadExistingKeys(outputPath);
   const executablePath = findBrowserExecutable();
   console.log(`Using browser: ${executablePath}`);
-  console.log(`Queries: ${queries.length}, per-query: ${opts.perQuery}, max-places: ${opts.maxPlaces}, already-done keys: ${existingKeys.size}`);
+  console.log(`Queries: ${queries.length}, Direct URLs: ${directUrls.length}, per-query: ${opts.perQuery}, max-places: ${opts.maxPlaces}, already-done keys: ${existingKeys.size}`);
 
   const context = await chromium.launchPersistentContext(profileDir, {
     executablePath,
@@ -505,22 +554,48 @@ async function main() {
   const candidates = new Map();
 
   try {
-    for (let qi = 0; qi < queries.length && candidates.size < opts.maxPlaces; qi += 1) {
+    for (const rawUrl of directUrls) {
+      const resolvedUrl = await resolveShortMapsUrl(rawUrl);
+      const key = cleanPlaceUrl(resolvedUrl);
+      const cid = extractCidFromUrl(resolvedUrl);
+      if (existingKeys.has(key) || (cid && existingKeys.has(cid))) continue;
+      if (!candidates.has(key)) {
+        candidates.set(key, { title: rawUrl, url: resolvedUrl, feedRating: null, feedReviews: 0, feedPrice: '' });
+      }
+    }
+
+    const perQueryBuckets = [];
+    for (let qi = 0; qi < queries.length; qi += 1) {
       const q = queries[qi];
       const found = await collectPlaceLinksForQuery(page, q, opts.perQuery);
-      let added = 0;
+      const bucket = [];
       for (const item of found) {
         const key = cleanPlaceUrl(item.url);
         const cid = extractCidFromUrl(item.url);
         if (existingKeys.has(key) || (cid && existingKeys.has(cid))) continue;
-        if (!candidates.has(key)) {
-          candidates.set(key, item);
-          added += 1;
-          if (candidates.size >= opts.maxPlaces) break;
+        bucket.push({ key, item });
+      }
+      perQueryBuckets.push(bucket);
+      console.log(`[Query ${qi + 1}/${queries.length}] "${q}" -> found ${found.length}, unseen ${bucket.length}`);
+      await page.waitForTimeout(700);
+    }
+
+    // Round-robin interleave across queries so later corridors are never starved.
+    let roundIdx = 0;
+    while (candidates.size < opts.maxPlaces) {
+      let addedInRound = false;
+      for (const bucket of perQueryBuckets) {
+        if (roundIdx < bucket.length) {
+          const { key, item } = bucket[roundIdx];
+          if (!candidates.has(key)) {
+            candidates.set(key, item);
+            addedInRound = true;
+            if (candidates.size >= opts.maxPlaces) break;
+          }
         }
       }
-      console.log(`[Query ${qi + 1}/${queries.length}] "${q}" -> found ${found.length}, queued +${added} (total ${candidates.size})`);
-      await page.waitForTimeout(800);
+      if (!addedInRound) break;
+      roundIdx += 1;
     }
 
     const queue = Array.from(candidates.values());

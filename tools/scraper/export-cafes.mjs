@@ -43,16 +43,23 @@ const ACCENT_PALETTE = [
 ];
 
 const PONTIANAK_CORRIDORS = [
+  { pattern: /sepakat\s*(?:2|ii)/i, label: 'Sepakat 2' },
+  { pattern: /sepakat\s*(?:1|i)\b/i, label: 'Sepakat 1' },
   { pattern: /gajah\s*mada/i, label: 'Gajah Mada' },
   { pattern: /ahmad\s*yani|a\.\s*yani/i, label: 'Ahmad Yani' },
   { pattern: /purnama/i, label: 'Purnama' },
+  { pattern: /karimata/i, label: 'Karimata' },
+  { pattern: /diponegoro/i, label: 'Diponegoro' },
+  { pattern: /suprapto|letjend\.?\s*suprapto|sutoyo/i, label: 'Sutoyo & Suprapto' },
+  { pattern: /mujahidin/i, label: 'Mujahidin' },
+  { pattern: /s\.?\s*parman/i, label: 'S. Parman' },
   { pattern: /podomoro|karya\s*baru/i, label: 'Podomoro' },
   { pattern: /hijas/i, label: 'Hijas' },
   { pattern: /reformasi|untan/i, label: 'Reformasi' },
   { pattern: /kota\s*baru/i, label: 'Kota Baru' },
   { pattern: /sungai\s*raya\s*dalam|serdam/i, label: 'Sungai Raya Dalam' },
   { pattern: /sungai\s*raya|kubu\s*raya/i, label: 'Sungai Raya' },
-  { pattern: /siantan/i, label: 'Siantan' },
+  { pattern: /siantan|khatulistiwa/i, label: 'Siantan' },
   { pattern: /tanjung\s*hulu/i, label: 'Tanjung Hulu' },
   { pattern: /tanjung\s*pura/i, label: 'Tanjungpura' },
   { pattern: /paris\s*2|parit\s*h\.?\s*husin/i, label: 'Paris 2' },
@@ -554,9 +561,9 @@ export function cleanCafeTitle(rawTitle) {
 }
 
 export function convertScrapedCafe(item, context) {
-  const { city, menuByCid, priceByCid, usedIds, includeImages } = context;
-  const title = cleanCafeTitle(item?.title);
-  if (!title) return { cafe: null, reason: 'missing_title' };
+  const { city, menuByCid, priceByCid, usedIds, includeImages, duplicateTitles = new Set() } = context;
+  const rawTitle = cleanCafeTitle(item?.title);
+  if (!rawTitle) return { cafe: null, reason: 'missing_title' };
   if (item.permanently_closed) return { cafe: null, reason: 'permanently_closed' };
 
   const lat = Number(item.latitude);
@@ -567,7 +574,20 @@ export function convertScrapedCafe(item, context) {
   const menuRecord = cid ? menuByCid.get(cid) : undefined;
   const priceRecord = cid ? priceByCid.get(cid) : undefined;
 
-  let id = slugify(title);
+  const area = resolveArea(item, city);
+  const streetShort = String(item.complete_address?.street || item.street || '')
+    .split(',')[0]
+    .replace(/^(Jl\.|Jalan)\s+/i, '')
+    .replace(/\s+No\.?\s*.*$/i, '')
+    .trim();
+  const branchLabel = area !== city ? area : streetShort;
+  const needsBranchSuffix =
+    duplicateTitles.has(rawTitle.toLowerCase()) &&
+    branchLabel &&
+    !rawTitle.toLowerCase().includes(branchLabel.toLowerCase());
+  const title = needsBranchSuffix ? `${rawTitle} (${branchLabel})` : rawTitle;
+
+  let id = slugify(needsBranchSuffix ? `${rawTitle} ${branchLabel}` : rawTitle);
   if (usedIds.has(id)) {
     let suffix = 2;
     while (usedIds.has(`${id}-${suffix}`)) suffix += 1;
@@ -575,7 +595,6 @@ export function convertScrapedCafe(item, context) {
   }
   usedIds.add(id);
 
-  const area = resolveArea(item, city);
   const address = String(item.address || '').trim() || `${area}, ${city}`;
   const hours = parseOpenHours(item.open_hours);
   const pricing = resolvePricing(item, menuRecord, priceRecord);
@@ -657,6 +676,18 @@ export function exportCafesDataset(records, options) {
   } = options;
 
   const usedIds = new Set();
+  const duplicateTitles = new Set();
+  const titleCounts = new Map();
+  for (const item of records) {
+    if (Number(item?.review_count || 0) < minReviews || item?.permanently_closed) continue;
+    const key = cleanCafeTitle(item?.title).toLowerCase();
+    if (!key) continue;
+    titleCounts.set(key, (titleCounts.get(key) || 0) + 1);
+  }
+  for (const [key, count] of titleCounts.entries()) {
+    if (count > 1) duplicateTitles.add(key);
+  }
+
   const cafes = [];
   const skipped = {
     low_reviews: 0,
@@ -678,6 +709,7 @@ export function exportCafesDataset(records, options) {
       priceByCid,
       usedIds,
       includeImages,
+      duplicateTitles,
     });
 
     if (!result.cafe) {

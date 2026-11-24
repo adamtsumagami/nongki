@@ -8,3 +8,7 @@ kedai kopi Kotabaru Yogyakarta
 coffee shop Gejayan Yogyakarta
 cafe buka malam Yogyakarta
 kedai kopi Jogja
+warkop Yogyakarta
+coffee shop Bantul Jogja
+cafe Tugu Yogyakarta
+cafe Jakal Kaliurang Yogyakarta

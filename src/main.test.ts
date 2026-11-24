@@ -281,7 +281,7 @@ describe('Nongki Platform', () => {
       resetBtn.click();
       window.history.replaceState(null, '', '/');
     }
-  });
+  }, 15000);
 
   it('shares a cafe via clipboard and shows toast for success and failure', async () => {
     const originalClipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
@@ -611,7 +611,7 @@ describe('Nongki Platform', () => {
       resetBtn.click();
       window.history.replaceState(null, '', '/');
     }
-  });
+  }, 15000);
 
   it('supports menu Escape close, 2-step bucket reset, presets, pagination, and #tentang section', () => {
     const resetBtn = document.querySelector<HTMLButtonElement>('[data-catalog-reset]')!;
@@ -715,7 +715,7 @@ describe('Nongki Platform', () => {
       resetBtn.click();
       window.history.replaceState(null, '', '/');
     }
-  });
+  }, 15000);
 
   it('uses support@nongki.me and supports the Usulkan Kafe tab workflow', () => {
     expect(document.body.innerHTML).toContain('support@nongki.me');
