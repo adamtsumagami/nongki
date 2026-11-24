@@ -389,6 +389,17 @@
   margin-top: 12px;
 }
 
+.catalog__notice {
+  margin-top: 12px;
+  padding: 8px 12px;
+  border: 1px dashed #3a3a3a;
+  border-radius: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.5;
+  color: #b9b3a7;
+}
+
 .catalog__search {
   display: flex;
   align-items: center;
@@ -528,12 +539,18 @@
   border-radius: 999px;
   background: #141414;
   color: var(--cream);
+  color-scheme: dark;
   font-family: var(--mono);
   font-size: 10px;
   font-weight: 500;
   letter-spacing: .04em;
   text-transform: uppercase;
   cursor: pointer;
+}
+
+.catalog__sort select option {
+  background-color: #141414;
+  color: #f0ede8;
 }
 
 .catalog__count {
@@ -1066,22 +1083,14 @@
   color: var(--cream);
 }
 
-.picker__actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: stretch;
-  gap: 10px;
-  margin-top: 18px;
-}
-
 .picker__btn {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 12px;
-  flex: 1 1 200px;
+  width: 100%;
   height: 64px;
-  margin-top: 0;
+  margin-top: 18px;
   border: 1.5px solid var(--ink);
   border-radius: 15px;
   background: var(--ink);
@@ -1095,39 +1104,6 @@
   text-transform: uppercase;
   cursor: pointer;
   transition: transform .15s ease, box-shadow .15s ease;
-}
-
-.picker__sound {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  flex: 0 0 auto;
-  min-height: 48px;
-  padding: 0 14px;
-  border: 1.5px solid var(--ink);
-  border-radius: 12px;
-  background: transparent;
-  color: var(--ink);
-  font-family: var(--mono);
-  font-size: 10.5px;
-  font-weight: 500;
-  letter-spacing: .05em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: opacity .15s ease, background .15s ease;
-}
-
-.picker__sound svg {
-  width: 16px;
-  height: 16px;
-  flex: 0 0 auto;
-}
-
-.picker__sound.is-muted {
-  opacity: .6;
-  border-style: dashed;
 }
 
 .picker__btn svg {
@@ -1736,7 +1712,7 @@
 .nongki-toast {
   position: fixed;
   left: 50%;
-  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(74px + env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%);
   z-index: 10050;
   max-width: min(90vw, 420px);

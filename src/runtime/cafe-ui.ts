@@ -64,10 +64,8 @@ import {
   type BucketTab,
 } from '../lib/bucketlist';
 import {
-  isPickerSoundEnabled,
   playPickerReveal,
   playPickerTick,
-  togglePickerSound,
 } from '../lib/sound';
 
 const HTML_ENTITIES: Record<string, string> = {
@@ -667,26 +665,6 @@ function renderPickerQuick(picker: HTMLElement): void {
   if (openBtn) {
     openBtn.setAttribute('aria-pressed', String(pickerOpenNow));
   }
-
-  syncPickerSoundButton(picker);
-}
-
-function syncPickerSoundButton(picker: HTMLElement): void {
-  const soundBtn = picker.querySelector<HTMLButtonElement>('[data-picker-sound]');
-  if (!soundBtn) return;
-
-  const enabled = isPickerSoundEnabled();
-  soundBtn.setAttribute('aria-pressed', String(enabled));
-  soundBtn.setAttribute(
-    'aria-label',
-    enabled ? 'Matikan suara pilih acak' : 'Aktifkan suara pilih acak',
-  );
-  soundBtn.classList.toggle('is-muted', !enabled);
-
-  const label = soundBtn.querySelector<HTMLElement>('[data-picker-sound-label]');
-  if (label) {
-    label.textContent = enabled ? 'Suara aktif' : 'Suara mati';
-  }
 }
 
 function renderPickerCard(cafe: Cafe, now: Date): string {
@@ -1239,13 +1217,6 @@ function initCafeUi(): void {
       pickerVibe = pickerVibe === value ? null : (value as Vibe);
       renderPickerQuick(picker);
       renderPickerHint(picker);
-      return;
-    }
-
-    if (target.closest('[data-picker-sound]') && picker) {
-      const enabled = togglePickerSound();
-      syncPickerSoundButton(picker);
-      if (enabled) playPickerTick(4, 8);
       return;
     }
 

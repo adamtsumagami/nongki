@@ -6,11 +6,11 @@ Status: early. The cafe data is placeholder, not real.
 
 ## What it does
 
-- Lists cafes in eight cities (Jakarta, Bandung, Yogyakarta, Surabaya, Medan, Makassar, Denpasar, Pontianak) with area, hours, price range and a Maps link.
-- Search and filters: city, open now, facilities (wi-fi, outlets, smoking area, musala).
-- Cafe of the day on the homepage.
-- Random pick button, with an "only the ones that are open" option.
-- Save cafes to a list, stored in your browser. No account.
+- Lists cafes across eight Indonesian cities (Jakarta, Bandung, Yogyakarta, Surabaya, Medan, Makassar, Denpasar, Pontianak) with area, hours, price range, facilities, and a Maps link.
+- Search, filters, and sorting: filter by city, vibe, facilities (Wi-Fi, outlets, smoking area, musala), price level, and open now, or sort by open status, rating, price, or name with URL query sync.
+- Cafe of the day on both mobile and desktop views.
+- Random picker with city, vibe, and open-now filters plus Web Audio API sound effects.
+- Save cafes to a local bucketlist stored in your browser (with copy-to-clipboard sharing and a back-to-top button). No account required.
 
 ## Stack
 
@@ -32,9 +32,9 @@ Open http://localhost:5173. Also `npm run test`, `npm run build`, `npm run previ
 ```text
 public/            static assets
 src/
-  data/            cafe data model
-  lib/             filtering, hours, timezone-aware open/closed helpers
-  runtime/         UI behavior (catalog, picker, bucketlist)
+  data/            cafe data model and seed entries
+  lib/             filtering, sorting, URL query helpers, bucketlist storage, Web Audio sound
+  runtime/         UI behavior (catalog, picker, bucketlist, sharing, back-to-top)
   styles/          CSS
   vendor/          third-party scripts
 index.html         the page

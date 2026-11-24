@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { CAFES_DATA, type Cafe } from '../data/cafes';
+import {
+  CAFES_DATA,
+  CITIES,
+  CITY_INFO,
+  FACILITIES,
+  PRICE_LEVELS,
+  VIBES,
+  type Cafe,
+} from '../data/cafes';
 import {
   SEMUA_KOTA,
   buildCafeShareUrl,
@@ -351,5 +359,56 @@ describe('jarak, radius, dan kawasan', () => {
     expect(areas).toContain('Gajah Mada');
     expect(areas).toContain('Reformasi');
     expect(new Set(areas).size).toBe(areas.length);
+  });
+});
+
+describe('integritas skema data kafe', () => {
+  it('memastikan seluruh entri memenuhi aturan format, relasi kota, dan enum valid', () => {
+    const ids = new Set<string>();
+    const citySet = new Set<string>(CITIES);
+    const vibeSet = new Set<string>(VIBES);
+    const facilitySet = new Set<string>(FACILITIES);
+    const priceSet = new Set<number>(PRICE_LEVELS);
+    const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
+    const hexColorRegex = /^#[0-9a-fA-F]{6}$/;
+
+    expect(CAFES_DATA.length).toBeGreaterThan(0);
+
+    for (const cafe of CAFES_DATA) {
+      expect(cafe.id.trim().length).toBeGreaterThan(0);
+      expect(ids.has(cafe.id)).toBe(false);
+      ids.add(cafe.id);
+
+      expect(cafe.name.trim().length).toBeGreaterThan(0);
+      expect(cafe.tagline.trim().length).toBeGreaterThan(0);
+      expect(cafe.area.trim().length).toBeGreaterThan(0);
+      expect(cafe.address.trim().length).toBeGreaterThan(0);
+      expect(cafe.description.trim().length).toBeGreaterThan(0);
+      expect(cafe.bestFor.trim().length).toBeGreaterThan(0);
+      expect(cafe.priceRange.trim().length).toBeGreaterThan(0);
+
+      expect(citySet.has(cafe.city)).toBe(true);
+      expect(CITY_INFO[cafe.city]).toBeDefined();
+
+      expect(cafe.opensAt).toMatch(timeRegex);
+      expect(cafe.closesAt).toMatch(timeRegex);
+      if (cafe.open24 !== undefined) {
+        expect(typeof cafe.open24).toBe('boolean');
+      }
+
+      expect(cafe.rating).toBeGreaterThanOrEqual(1);
+      expect(cafe.rating).toBeLessThanOrEqual(5);
+      expect(cafe.reviewCount).toBeGreaterThanOrEqual(0);
+      expect(priceSet.has(cafe.priceLevel)).toBe(true);
+
+      expect(cafe.vibes.length).toBeGreaterThan(0);
+      expect(cafe.vibes.every((vibe) => vibeSet.has(vibe))).toBe(true);
+      expect(cafe.facilities.every((facility) => facilitySet.has(facility))).toBe(true);
+      expect(cafe.menuHighlights.length).toBeGreaterThan(0);
+
+      const parsedUrl = new URL(cafe.mapsUrl);
+      expect(parsedUrl.protocol).toBe('https:');
+      expect(cafe.accentColor).toMatch(hexColorRegex);
+    }
   });
 });

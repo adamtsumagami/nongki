@@ -16,8 +16,9 @@ Nongki is an Indonesia-wide web directory and recommendation platform for cafes 
 - JS islands in `src/vendor/theme.js` and `src/vendor/home-m.js` (initXxx functions, no framework)
 - [Lenis](https://lenis.darkroom.engineering/) for smooth scrolling (initialized in `initSmoothScroll()` — no feature flag; simply runs on desktop pointers)
 - [Matter.js](https://brm.io/matter-js/) for bean-falling animation
-- No Shopify, no backend, no SSR. State (bucketlist) lives in `localStorage`.
-- No lint, format, or CI config. `npm run build` (`tsc -b && vite build`) is the only typecheck gate; `npm run test` is the only test gate.
+- Native Web Audio API (`src/lib/sound.ts`) for optional random-picker sound effects
+- No Shopify, no backend, no SSR. State (bucketlist and sound preference) lives in `localStorage` with in-memory fallback. Filter state syncs with URL query parameters (`q`, `kota`, `suasana`, `fasilitas`, `harga`, `buka`, `urut`).
+- GitHub Actions CI (`.github/workflows/ci.yml`) runs `npm run test` and `npm run build` (`tsc -b && vite build`) on pushes to `main` and pull requests. No lint or format config.
 
 ## Commands
 
@@ -39,9 +40,12 @@ npx vitest run -t "<name>"             # single test by name
 ```text
 index.html                 # main markup (page is one huge file — edit in chunks)
 public/assets/             # icons, SVG tiles, images (LFS for png/webp/otf)
+public/robots.txt          # crawler directives
+.github/workflows/ci.yml   # Vitest + tsc/Vite CI workflow
 src/data/cafes.ts          # seed cafe data (DUMMY — see below) + city metadata
-src/lib/cafes.ts           # filtering, timezone-aware open/closed, helpers
-src/runtime/cafe-ui.ts     # catalog/picker/bucketlist/cafe-of-the-day UI runtime
+src/lib/cafes.ts           # filtering, sorting, URL sync, share formatting, timezone hours
+src/lib/sound.ts           # Web Audio picker tick/reveal sound cues + mute toggle
+src/runtime/cafe-ui.ts     # catalog/picker/bucketlist/sharing/back-to-top UI runtime
 src/runtime/bootstrapGlobals.ts  # sets window.Lenis, window.Matter
 src/vendor/theme.js        # interactive "islands", loaded after cafe-ui.ts
 src/vendor/home-m.js       # mobile hero + mobile story sections
@@ -65,7 +69,11 @@ src/main.ts, src/test/setup.ts
 
 - Lenis smooth scroll works; `data-lenis-prevent` on drawers opts out.
 - Cart/account/checkout/buying flow fully removed.
-- Seed data: 22 fictional cafes across 8 cities (Jakarta, Bandung, Yogyakarta, Surabaya, Medan, Makassar, Denpasar, Pontianak - Pontianak has 8, the rest 2 each), including WIB/WITA timezone handling.
+- Seed data: 22 fictional cafes across 8 cities (Jakarta, Bandung, Yogyakarta, Surabaya, Medan, Makassar, Denpasar, Pontianak - Pontianak has 8, the rest 2 each), including WIB/WITA timezone handling and automated schema integrity checks in `src/lib/cafes.test.ts`.
+- Shared directory & random picker: `#cafe-of-the-day` renders on mobile hero and desktop `.cod-band`; single shared `#direktori` and `#random-picker` sections sit directly under `#MainContent` for both viewports.
+- Directory features: search, city/vibe/facility/price/open-now filters, sorting (`default`, `open`, `rating`, `price-asc`, `name`), URL query sync, cafe & bucketlist copy/share with toast feedback (`[data-toast]`), floating back-to-top button (`[data-back-to-top]`), and random picker city/open filters with Web Audio sound effects.
+- Firefox compatibility: `theme.js` removes `wheel`, `mousewheel`, and `DOMMouseScroll` listeners from Matter.js; sort `<select>` uses dark `color-scheme` and explicit `<option>` colors.
+- Open Graph & Twitter metadata plus `public/robots.txt` added; fictional testimonial copy replaced with Indonesian usage scenarios.
 - Legacy unreferenced assets removed (53 files: Apocalypse product images, bags, etc.). `public/assets/` is now ~40 files (~5 MB); `dist/` rebuilt at ~5.4 MB. Do not re-add those assets.
 - Manifesto (`.mani`) exists on **both** viewports with intentionally duplicated markup: `data-mani="mobile"` (inside `home_mobile`, after mobile hero) and `data-mani="desktop"` (MainContent, after desktop hero). `theme.js` binds the desktop copy; `home-m.js` binds the mobile copy. Don't delete either or collapse them.
 - Promoted `--ac` to `base.css :root` (was only ever injected by Shopify; `.sq-btn` rendered transparent without it before this was fixed).

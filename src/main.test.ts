@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import rawHtml from '../index.html?raw';
-import { resetSoundStateForTest, setPickerSoundEnabled } from './lib/sound';
+import { resetSoundStateForTest } from './lib/sound';
 import themeSource from './vendor/theme.js?raw';
 import homeMSource from './vendor/home-m.js?raw';
 
@@ -184,7 +184,10 @@ describe('Nongki Platform', () => {
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
   });
 
-  it('keeps legacy commerce copy and data-filter-area out of index.html', () => {
+  it('keeps legacy commerce copy, fictional reviews, and data-filter-area out of index.html', () => {
+    for (const required of ['og:title', 'twitter:card', 'catalog__notice']) {
+      expect(rawHtml).toContain(required);
+    }
     for (const forbidden of [
       'data-filter-area',
       'Third-party certified beans',
@@ -194,6 +197,16 @@ describe('Nongki Platform', () => {
       'Atur Kadensi',
       'App Store',
       'Google Play',
+      'Sharon D.',
+      'Cori S.',
+      'Kaylee S.R.',
+      'Matt B.',
+      'Ivan R.',
+      'Frank A.',
+      'Barbara M.',
+      'Permainan papan',
+      '700+ pengguna',
+      'terlengkap di Indonesia',
     ]) {
       expect(rawHtml).not.toContain(forbidden);
     }
@@ -359,16 +372,15 @@ describe('Nongki Platform', () => {
     }
   });
 
-  it('toggles picker sound preference and plays sound cues only when enabled', () => {
+  it('omits the picker sound toggle button and still plays sound cues on spin', () => {
     const originalAudioContext = Object.getOwnPropertyDescriptor(window, 'AudioContext');
-    const soundBtn = document.querySelector<HTMLButtonElement>('[data-picker-sound]')!;
-    const soundLabel = soundBtn.querySelector<HTMLElement>('[data-picker-sound-label]')!;
     const spinBtn = document.querySelector<HTMLButtonElement>('[data-picker-spin]')!;
     const startMock = vi.fn();
 
+    expect(document.querySelector('[data-picker-sound]')).toBeNull();
+
     try {
       resetSoundStateForTest();
-      setPickerSoundEnabled(true);
       const mockCtx = {
         currentTime: 0,
         state: 'running',
@@ -398,25 +410,9 @@ describe('Nongki Platform', () => {
       });
       Object.defineProperty(window, 'AudioContext', { configurable: true, value: AudioCtor });
 
-      expect(soundBtn.getAttribute('aria-pressed')).toBe('true');
-      expect(soundLabel.textContent).toBe('Suara aktif');
-
       spinBtn.click();
       expect(startMock).toHaveBeenCalledTimes(3);
-
-      soundBtn.click();
-      expect(soundBtn.getAttribute('aria-pressed')).toBe('false');
-      expect(soundLabel.textContent).toBe('Suara mati');
-
-      spinBtn.click();
-      expect(startMock).toHaveBeenCalledTimes(3);
-
-      soundBtn.click();
-      expect(soundBtn.getAttribute('aria-pressed')).toBe('true');
-      expect(soundLabel.textContent).toBe('Suara aktif');
-      expect(startMock).toHaveBeenCalledTimes(4);
     } finally {
-      setPickerSoundEnabled(true);
       resetSoundStateForTest();
       if (originalAudioContext) {
         Object.defineProperty(window, 'AudioContext', originalAudioContext);
