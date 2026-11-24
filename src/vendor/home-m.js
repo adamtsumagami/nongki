@@ -423,11 +423,14 @@ class HomeM {
       }
       if (mani && words.length) {
         const r = mani.getBoundingClientRect();
-        const p = Math.max(0, Math.min(1, -r.top / Math.max(1, r.height - H) * 1.15));
+        const start = H * 0.8;
+        const end = Math.min(H * 0.08, Math.max(-80, H - (r.height || 320) - 24));
+        const span = Math.max(200, start - end);
+        const p = Math.max(0, Math.min(1, (start - r.top) / span));
         const lit = p * words.length;
         let reflow = false;
         words.forEach((w, i) => {
-          w.style.opacity = (0.14 + 0.86 * Math.max(0, Math.min(1, lit - i))).toFixed(3);
+          w.style.opacity = (0.22 + 0.78 * Math.max(0, Math.min(1, lit - i))).toFixed(3);
           // key words switch to the script face, and ego / jargon / cover-up get struck through, once they're read
           // the strike line draws through the word as it's read
           if (w.classList.contains('w--x')) w.style.setProperty('--xp', Math.max(0, Math.min(1, (lit - i - 0.15) / 0.85)).toFixed(3));

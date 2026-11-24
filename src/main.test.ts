@@ -612,5 +612,87 @@ describe('Nongki Platform', () => {
       window.history.replaceState(null, '', '/');
     }
   });
+
+  it('supports menu Escape close, 2-step bucket reset, presets, pagination, and #tentang section', () => {
+    const resetBtn = document.querySelector<HTMLButtonElement>('[data-catalog-reset]')!;
+
+    try {
+      // Shared #tentang section and hidden distilled roaster tail sections
+      const tentang = document.querySelector<HTMLElement>('#tentang');
+      expect(tentang).not.toBeNull();
+      expect(tentang?.hidden).toBe(false);
+      expect(
+        document.querySelector('#shopify-section-template--20401917558953__pillars')?.hasAttribute('hidden'),
+      ).toBe(true);
+
+      // Menu opens and closes via Escape with aria-hidden sync
+      const menuBtn = document.querySelector<HTMLButtonElement>('[data-menu-toggle]')!;
+      const menuWrap = document.querySelector<HTMLElement>('.underlay-nav__menu')!;
+      expect(menuWrap.getAttribute('aria-hidden')).toBe('true');
+      menuBtn.click();
+      expect(document.body.dataset.menuStatus).toBe('open');
+      expect(menuWrap.getAttribute('aria-hidden')).toBe('false');
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      expect(document.body.dataset.menuStatus).toBe('closed');
+      expect(menuWrap.getAttribute('aria-hidden')).toBe('true');
+
+      // Initial pagination caps visible cards at 12 and reveals all via button
+      const visibleBefore = Array.from(document.querySelectorAll<HTMLElement>('#direktori .cc')).filter(
+        (card) => !card.hidden,
+      );
+      expect(visibleBefore.length).toBe(12);
+      const moreBtn = document.querySelector<HTMLButtonElement>('[data-catalog-more]')!;
+      expect(moreBtn.parentElement?.hidden).toBe(false);
+      moreBtn.click();
+      const visibleAfter = Array.from(document.querySelectorAll<HTMLElement>('#direktori .cc')).filter(
+        (card) => !card.hidden,
+      );
+      expect(visibleAfter.length).toBe(CAFES_DATA.length);
+
+      // Quick preset + active removable chip + Data contoh badge on non-Pontianak cards
+      const hematPreset = document.querySelector<HTMLButtonElement>('[data-catalog-preset="hemat"]')!;
+      hematPreset.click();
+      expect(hematPreset.getAttribute('aria-pressed')).toBe('true');
+      const activeBar = document.querySelector<HTMLElement>('[data-catalog-active]')!;
+      expect(activeBar.hidden).toBe(false);
+      const priceClearChip = activeBar.querySelector<HTMLButtonElement>('[data-clear-chip="price"]')!;
+      expect(priceClearChip).not.toBeNull();
+      priceClearChip.click();
+      expect(hematPreset.getAttribute('aria-pressed')).toBe('false');
+
+      const jakartaCard = Array.from(document.querySelectorAll<HTMLElement>('#direktori .cc')).find((card) =>
+        card.textContent?.includes('Jakarta'),
+      );
+      expect(jakartaCard?.textContent).toContain('Data contoh');
+
+      // Bucketlist: save item, switch tab via ArrowRight, and require 2 clicks to reset
+      const firstSave = document.querySelector<HTMLButtonElement>('#direktori [data-cafe-save]')!;
+      firstSave.click();
+      document.querySelector<HTMLButtonElement>('[data-bucket-toggle]')!.click();
+
+      const wishlistTab = document.querySelector<HTMLButtonElement>('[data-bucket-tab="wishlist"]')!;
+      wishlistTab.focus();
+      wishlistTab.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+      expect(document.querySelector('[data-bucket-tab="visited"]')?.getAttribute('aria-selected')).toBe(
+        'true',
+      );
+
+      const bucketReset = document.querySelector<HTMLButtonElement>('[data-bucket-reset]')!;
+      expect(bucketReset.disabled).toBe(false);
+      bucketReset.click();
+      expect(bucketReset.dataset.confirm).toBe('1');
+      expect(bucketReset.textContent).toBe('Yakin kosongkan?');
+      expect(document.querySelector('[data-bucket-count]')?.textContent?.trim()).toBe('1');
+
+      bucketReset.click();
+      expect(document.querySelector('[data-bucket-count]')?.textContent?.trim()).toBe('0');
+      expect(document.querySelector('[data-toast]')?.textContent).toContain('Daftar simpan dikosongkan.');
+
+      document.querySelector<HTMLElement>('[data-bucket-close]')!.click();
+    } finally {
+      resetBtn.click();
+      window.history.replaceState(null, '', '/');
+    }
+  });
 });
 

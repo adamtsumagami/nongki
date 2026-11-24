@@ -212,6 +212,10 @@ function renderAllCafeOfTheDay(containers: HTMLElement[]): void {
   }
 }
 
+function sampleBadgeMarkup(cafe: Cafe): string {
+  return cafe.city === 'Pontianak' ? '' : '<span class="cc__badge-sample">Data contoh</span>';
+}
+
 function renderCafeOfTheDay(container: HTMLElement): void {
   const now = new Date();
   codDateKey = getLocalDateKey(now);
@@ -228,7 +232,8 @@ function renderCafeOfTheDay(container: HTMLElement): void {
 
   container.innerHTML = `
     <div class="cod__head">
-      <span class="cod__kicker"><i></i>Kafe Pilihan Hari Ini</span>
+      <h2 class="sr-only">Kafe Pilihan Hari Ini</h2>
+      <span class="cod__kicker" aria-hidden="true"><i></i>Kafe Pilihan Hari Ini</span>
       <span class="cod__date">${esc(getDailyLabel(now))}</span>
     </div>
     <article class="cod__card" style="--cod-accent:${esc(cafe.accentColor)}">
@@ -243,7 +248,7 @@ function renderCafeOfTheDay(container: HTMLElement): void {
       <div class="cod__body">
         <div class="cod__row">
           <span class="cod__area">${esc(cafe.city)} · ${esc(cafe.area)}</span>
-          <span class="cc__status${status.open ? ' is-open' : ''}"><i></i>${esc(status.label)}</span>
+          <div class="cod__badges">${sampleBadgeMarkup(cafe)}<span class="cc__status${status.open ? ' is-open' : ''}"><i></i>${esc(status.label)}</span></div>
         </div>
         <h3 class="cod__name">${esc(cafe.name)}</h3>
         <p class="cod__tag">${esc(cafe.tagline)}</p>
@@ -257,7 +262,7 @@ function renderCafeOfTheDay(container: HTMLElement): void {
           ${pillTags.map((tag) => `<span>${esc(tag)}</span>`).join('')}
         </div>
         <div class="cod__actions">
-          <a class="cod__cta" href="${esc(cafe.mapsUrl)}" target="_blank" rel="noopener">${ICONS.pin}<span>Rute ke sana</span></a>
+          <a class="cod__cta" href="${esc(cafe.mapsUrl)}" target="_blank" rel="noopener">${ICONS.pin}<span>Buka Peta</span></a>
           <button class="cod__inspect" type="button" data-cod-inspect="${esc(cafe.id)}">Lihat detail</button>
           ${saveButton(cafe, { className: 'cod__save', idle: 'Simpan', active: 'Tersimpan' })}
           ${shareButton(cafe, { className: 'cod__share', label: 'Bagikan' })}
@@ -278,6 +283,43 @@ interface CatalogState {
   sort: CafeSort;
 }
 
+interface CatalogPreset {
+  id: string;
+  label: string;
+  vibes?: Vibe[];
+  facilities?: Facility[];
+  priceLevels?: PriceLevel[];
+  openNow?: boolean;
+}
+
+const CATALOG_PRESETS: readonly CatalogPreset[] = [
+  {
+    id: 'wfc',
+    label: 'WFC Sekarang',
+    vibes: ['Ramah Kerja'],
+    facilities: ['Wi-Fi', 'Colokan'],
+    openNow: true,
+  },
+  {
+    id: 'malam',
+    label: 'Nongkrong Malam',
+    vibes: ['Buka Malam'],
+  },
+  {
+    id: 'hemat',
+    label: 'Hemat ≤ 25rb',
+    priceLevels: [1],
+  },
+  {
+    id: 'musala-wifi',
+    label: 'Musala + Wi-Fi',
+    facilities: ['Musala', 'Wi-Fi'],
+  },
+];
+
+const CATALOG_PAGE_SIZE = 12;
+let catalogShowAll = false;
+
 const catalogState: CatalogState = {
   query: '',
   city: SEMUA_KOTA,
@@ -288,6 +330,33 @@ const catalogState: CatalogState = {
   openNow: false,
   sort: 'default',
 };
+
+function matchesExactList<T>(actual: readonly T[], target: readonly T[] = []): boolean {
+  return actual.length === target.length && target.every((item) => actual.includes(item));
+}
+
+function isPresetActive(preset: CatalogPreset): boolean {
+  return (
+    matchesExactList(catalogState.vibes, preset.vibes) &&
+    matchesExactList(catalogState.facilities, preset.facilities) &&
+    matchesExactList(catalogState.priceLevels, preset.priceLevels) &&
+    catalogState.openNow === Boolean(preset.openNow)
+  );
+}
+
+function applyPreset(preset: CatalogPreset): void {
+  if (isPresetActive(preset)) {
+    catalogState.vibes = [];
+    catalogState.facilities = [];
+    catalogState.priceLevels = [];
+    catalogState.openNow = false;
+    return;
+  }
+  catalogState.vibes = [...(preset.vibes ?? [])];
+  catalogState.facilities = [...(preset.facilities ?? [])];
+  catalogState.priceLevels = [...(preset.priceLevels ?? [])];
+  catalogState.openNow = Boolean(preset.openNow);
+}
 
 function syncCatalogUrl(): void {
   if (typeof window.history?.replaceState !== 'function') return;
@@ -315,6 +384,11 @@ function hydrateCatalogFromUrl(catalog: HTMLElement): void {
 
   const sort = catalog.querySelector<HTMLSelectElement>('[data-catalog-sort]');
   if (sort) sort.value = parsed.sort;
+
+  const advanced = catalog.querySelector<HTMLDetailsElement>('[data-catalog-advanced]');
+  if (advanced && (catalogState.facilities.length > 0 || catalogState.priceLevels.length > 0)) {
+    advanced.open = true;
+  }
 }
 
 function toggleValue<T>(list: T[], value: T): T[] {
@@ -327,6 +401,7 @@ function chip(value: string, group: string, label: string, count?: number): stri
 }
 
 function buildCatalogChips(catalog: HTMLElement): void {
+  const presets = catalog.querySelector<HTMLElement>('[data-catalog-presets]');
   const city = catalog.querySelector<HTMLElement>('[data-filter-city]');
   const vibes = catalog.querySelector<HTMLElement>('[data-filter-vibes]');
   const facilities = catalog.querySelector<HTMLElement>('[data-filter-facilities]');
@@ -334,6 +409,12 @@ function buildCatalogChips(catalog: HTMLElement): void {
   const open = catalog.querySelector<HTMLElement>('[data-filter-open]');
   const counts = countByCity();
 
+  if (presets) {
+    presets.innerHTML = CATALOG_PRESETS.map(
+      (preset) =>
+        `<button class="fchip fchip--preset" type="button" data-catalog-preset="${esc(preset.id)}" aria-pressed="false">${esc(preset.label)}</button>`,
+    ).join('');
+  }
   if (city) {
     city.innerHTML = [
       chip(SEMUA_KOTA, 'city', SEMUA_KOTA, CAFES_DATA.length),
@@ -409,6 +490,18 @@ function syncCatalogChips(catalog: HTMLElement): void {
 
     button.setAttribute('aria-pressed', String(pressed));
   });
+
+  catalog.querySelectorAll<HTMLButtonElement>('[data-catalog-preset]').forEach((button) => {
+    const preset = CATALOG_PRESETS.find((item) => item.id === button.dataset.catalogPreset);
+    button.setAttribute('aria-pressed', String(preset ? isPresetActive(preset) : false));
+  });
+
+  const advCount = catalogState.facilities.length + catalogState.priceLevels.length;
+  const advBadge = catalog.querySelector<HTMLElement>('[data-catalog-advanced-count]');
+  if (advBadge) {
+    advBadge.textContent = String(advCount);
+    advBadge.hidden = advCount === 0;
+  }
 }
 
 function syncSearchAdornments(catalog: HTMLElement): void {
@@ -432,21 +525,76 @@ function hasActiveFilters(): boolean {
   );
 }
 
-function renderCafeCard(cafe: Cafe, now: Date, autoExpand = false): string {
+const SORT_LABELS: Record<CafeSort, string> = {
+  default: 'Rekomendasi',
+  open: 'Buka dulu',
+  rating: 'Rating tertinggi',
+  'price-asc': 'Harga termurah',
+  name: 'Nama A-Z',
+};
+
+function buildActiveChipsMarkup(): string {
+  const chips: string[] = [];
+  const pushChip = (type: string, label: string, value = ''): void => {
+    chips.push(
+      `<button class="catalog__active-chip" type="button" data-clear-chip="${esc(type)}" data-clear-value="${esc(value)}" aria-label="Hapus filter ${esc(label)}">${esc(label)} <span aria-hidden="true">×</span></button>`,
+    );
+  };
+
+  if (catalogState.query.trim()) pushChip('query', `Cari: "${catalogState.query.trim()}"`);
+  if (catalogState.city !== SEMUA_KOTA) pushChip('city', `Kota: ${catalogState.city}`);
+  if (catalogState.area) pushChip('area', `Kawasan: ${catalogState.area}`);
+  catalogState.vibes.forEach((v) => pushChip('vibe', v, v));
+  catalogState.facilities.forEach((f) => pushChip('facility', f, f));
+  catalogState.priceLevels.forEach((p) => pushChip('price', PRICE_LEVEL_SHORT[p], String(p)));
+  if (catalogState.openNow) pushChip('open', 'Buka sekarang');
+  if (catalogState.sort !== 'default') pushChip('sort', `Urut: ${SORT_LABELS[catalogState.sort]}`);
+
+  return chips.join('');
+}
+
+function buildEmptyCatalogMessage(): string {
+  const query = catalogState.query.trim();
+  const hasFilters =
+    catalogState.city !== SEMUA_KOTA ||
+    catalogState.area.length > 0 ||
+    catalogState.vibes.length > 0 ||
+    catalogState.facilities.length > 0 ||
+    catalogState.priceLevels.length > 0 ||
+    catalogState.openNow;
+
+  if (query && hasFilters) {
+    return `Tidak ditemukan kafe untuk "${query}" dengan kombinasi filter aktif.`;
+  }
+  if (query) {
+    return `Tidak ada kafe yang cocok dengan kata kunci "${query}". Coba nama jalan, area, atau menu lain.`;
+  }
+  if (hasFilters) {
+    return 'Kombinasi filter terlalu spesifik. Lepas salah satu filter suasana, fasilitas, atau jam buka.';
+  }
+  return 'Coba kurangi filter atau gunakan kata kunci yang lebih umum.';
+}
+
+function renderCafeCard(
+  cafe: Cafe,
+  now: Date,
+  autoExpand = false,
+  hiddenExtra = false,
+): string {
   const tags = [...cafe.vibes.slice(0, 2), ...cafe.facilities.slice(0, 2)];
 
   return `
-    <article class="cc" data-cafe-card="${esc(cafe.id)}" style="--cc-accent:${esc(cafe.accentColor)}">
+    <article class="cc" data-cafe-card="${esc(cafe.id)}" style="--cc-accent:${esc(cafe.accentColor)}"${hiddenExtra ? ' hidden' : ''}>
       <div class="cc__media" aria-hidden="true"><span class="cc__mono">${esc(getInitials(cafe.name))}</span>${cafePhotoMarkup(cafe)}</div>
       <div class="cc__main">
-        <div class="cc__topline"><span class="cc__area">${esc(cafe.city)} · ${esc(cafe.area)}</span>${statusMarkup(cafe, now)}</div>
+        <div class="cc__topline"><span class="cc__area">${esc(cafe.city)} · ${esc(cafe.area)}</span>${sampleBadgeMarkup(cafe)}${statusMarkup(cafe, now)}</div>
         <h3 class="cc__name">${esc(cafe.name)}</h3>
         <p class="cc__tagline">${esc(cafe.tagline)}</p>
         <div class="cc__meta"><span><b>★ ${esc(cafe.rating.toFixed(1))}</b></span>${cafe.reviewCount > 0 ? `<span>${esc(formatReviewCount(cafe.reviewCount))} ulasan</span>` : ''}<span>${esc(PRICE_LEVEL_SHORT[cafe.priceLevel])}</span><span>${esc(formatHours(cafe))}</span></div>
         <div class="cc__tags">${tags.map((tag) => `<span>${esc(tag)}</span>`).join('')}</div>
       </div>
       <div class="cc__side">
-        <a class="cc__cta" href="${esc(cafe.mapsUrl)}" target="_blank" rel="noopener">${ICONS.pin}<span>Rute</span></a>
+        <a class="cc__cta" href="${esc(cafe.mapsUrl)}" target="_blank" rel="noopener">${ICONS.pin}<span>Buka Peta</span></a>
         <div class="cc__icons">
           ${saveButton(cafe, { className: 'cc__icon', idle: 'Simpan', active: 'Tersimpan' })}
           ${visitedButton(cafe, { className: 'cc__icon', idle: 'Tandai', active: 'Dikunjungi' })}
@@ -499,11 +647,19 @@ function renderCatalog(catalog: HTMLElement): void {
 
   const grid = catalog.querySelector<HTMLElement>('[data-catalog-grid]');
   const count = catalog.querySelector<HTMLElement>('[data-catalog-count]');
+  const activeBar = catalog.querySelector<HTMLElement>('[data-catalog-active]');
+  const moreWrap = catalog.querySelector<HTMLElement>('[data-catalog-more-wrap]');
+  const moreBtn = catalog.querySelector<HTMLButtonElement>('[data-catalog-more]');
   const empty = catalog.querySelector<HTMLElement>('[data-catalog-empty]');
+  const emptyMsg = catalog.querySelector<HTMLElement>('[data-catalog-empty-msg]');
   const reset = catalog.querySelector<HTMLButtonElement>('[data-catalog-reset]');
 
   if (grid) {
-    grid.innerHTML = results.map((cafe) => renderCafeCard(cafe, now, singleSearchMatch)).join('');
+    grid.innerHTML = results
+      .map((cafe, index) =>
+        renderCafeCard(cafe, now, singleSearchMatch, !catalogShowAll && index >= CATALOG_PAGE_SIZE),
+      )
+      .join('');
     grid.hidden = results.length === 0;
   }
   if (count) {
@@ -515,7 +671,23 @@ function renderCatalog(catalog: HTMLElement): void {
         : '';
     count.innerHTML = `Menampilkan <b>${results.length}</b> dari ${CAFES_DATA.length} kafe${scopeSuffix}`;
   }
+  if (activeBar) {
+    const chipsMarkup = buildActiveChipsMarkup();
+    activeBar.innerHTML = chipsMarkup;
+    activeBar.hidden = chipsMarkup.length === 0;
+  }
+  if (moreWrap && moreBtn) {
+    const extraCount = results.length - CATALOG_PAGE_SIZE;
+    const showMore = !catalogShowAll && extraCount > 0;
+    moreWrap.hidden = !showMore;
+    if (showMore) {
+      moreBtn.textContent = `Tampilkan semua ${results.length} kafe (+${extraCount} lagi)`;
+    }
+  }
   if (empty) empty.hidden = results.length > 0;
+  if (emptyMsg && results.length === 0) {
+    emptyMsg.textContent = buildEmptyCatalogMessage();
+  }
   if (reset) reset.disabled = !hasActiveFilters();
 }
 
@@ -538,11 +710,13 @@ function handleFilterClick(button: HTMLButtonElement, catalog: HTMLElement): voi
     catalogState.openNow = !catalogState.openNow;
   }
 
+  catalogShowAll = false;
   syncCatalogUrl();
   renderCatalog(catalog);
 }
 
 function resetCatalog(catalog: HTMLElement): void {
+  catalogShowAll = false;
   catalogState.query = '';
   catalogState.city = SEMUA_KOTA;
   catalogState.area = '';
@@ -567,6 +741,7 @@ function inspectCafeInCatalog(catalog: HTMLElement | null, cafeId: string): void
   if (!cafe) return;
 
   if (catalog) {
+    catalogShowAll = true;
     catalogState.city = cafe.city;
     catalogState.area = '';
     catalogState.query = cafe.name;
@@ -852,6 +1027,7 @@ function renderPickerCard(cafe: Cafe, now: Date): string {
       <div class="rcard__body">
         <div class="rcard__top">
           <span class="rcard__area">${esc(cafe.city)} · ${esc(cafe.area)}</span>
+          ${sampleBadgeMarkup(cafe)}
           <span class="cc__status${status.open ? ' is-open' : ''}"><i></i>${esc(status.label)}</span>
         </div>
         <h3 class="rcard__name">${esc(cafe.name)}</h3>
@@ -900,6 +1076,7 @@ function spinPicker(picker: HTMLElement): void {
   lastPickedId = result.id;
 
   if (prefersReducedMotion() || pool.length === 1) {
+    out.setAttribute('aria-live', 'polite');
     out.innerHTML = renderPickerCard(result, new Date());
     syncBucketControls();
     playPickerReveal();
@@ -908,6 +1085,7 @@ function spinPicker(picker: HTMLElement): void {
 
   if (pickerTimer) window.clearTimeout(pickerTimer);
   if (button) button.disabled = true;
+  out.setAttribute('aria-live', 'off');
 
   let tick = 0;
   const tickCount = 9;
@@ -922,6 +1100,7 @@ function spinPicker(picker: HTMLElement): void {
       return;
     }
 
+    out.setAttribute('aria-live', 'polite');
     out.innerHTML = renderPickerCard(result, new Date());
     if (button) button.disabled = false;
     syncBucketControls();
@@ -933,10 +1112,26 @@ function spinPicker(picker: HTMLElement): void {
 
 let activeTab: BucketTab = 'wishlist';
 let bucketPreviousFocus: HTMLElement | null = null;
+let bucketResetConfirmTimer: number | undefined;
+
+function clearBucketResetConfirm(): void {
+  if (bucketResetConfirmTimer) {
+    window.clearTimeout(bucketResetConfirmTimer);
+    bucketResetConfirmTimer = undefined;
+  }
+  const reset = document.querySelector<HTMLButtonElement>('[data-bucket-reset]');
+  if (reset) {
+    delete reset.dataset.confirm;
+    reset.classList.remove('is-confirm');
+    reset.textContent = 'Kosongkan';
+  }
+}
 
 function setBucketOpen(open: boolean): void {
   const bucket = document.querySelector<HTMLElement>('[data-bucket]');
   if (!bucket) return;
+
+  if (!open) clearBucketResetConfirm();
 
   bucket.classList.toggle('is-open', open);
   bucket.setAttribute('aria-hidden', String(!open));
@@ -993,7 +1188,7 @@ function bucketItemMarkup(cafe: Cafe, tab: BucketTab, now: Date): string {
         <h3 class="bitem__name">${esc(cafe.name)}</h3>
         <div class="bitem__meta">${esc(cafe.city)} · ${esc(cafe.area)} · ${esc(PRICE_LEVEL_SHORT[cafe.priceLevel])} · ${status.open ? 'buka sekarang' : 'sedang tutup'}</div>
         <div class="bitem__actions">
-          <a href="${esc(cafe.mapsUrl)}" target="_blank" rel="noopener">Peta</a>
+          <a href="${esc(cafe.mapsUrl)}" target="_blank" rel="noopener">Buka Peta</a>
           <button type="button" data-bucket-move="${esc(cafe.id)}" data-bucket-target="${isWish ? 'visited' : 'wishlist'}">${isWish ? 'Sudah ke sana' : 'Simpan lagi'}</button>
           <button type="button" class="bitem__remove" data-bucket-remove="${esc(cafe.id)}">Hapus</button>
         </div>
@@ -1034,6 +1229,7 @@ function renderBucketlist(): void {
 
   const reset = document.querySelector<HTMLButtonElement>('[data-bucket-reset]');
   if (reset) reset.disabled = state.wishlist.length + state.visited.length === 0;
+  clearBucketResetConfirm();
 
   syncBucketTabs();
 }
@@ -1206,6 +1402,7 @@ function initCafeUi(): void {
 
     const search = catalog.querySelector<HTMLInputElement>('[data-catalog-search]');
     search?.addEventListener('input', () => {
+      catalogShowAll = false;
       catalogState.query = search.value;
       syncCatalogUrl();
       renderCatalog(catalog);
@@ -1215,6 +1412,7 @@ function initCafeUi(): void {
     const sortSelect = catalog.querySelector<HTMLSelectElement>('[data-catalog-sort]');
     sortSelect?.addEventListener('change', () => {
       const value = sortSelect.value;
+      catalogShowAll = false;
       catalogState.sort = (CAFE_SORTS as readonly string[]).includes(value)
         ? (value as CafeSort)
         : 'default';
@@ -1312,7 +1510,17 @@ function initCafeUi(): void {
 
     const resetBucket = target.closest<HTMLButtonElement>('[data-bucket-reset]');
     if (resetBucket) {
+      if (resetBucket.dataset.confirm !== '1') {
+        resetBucket.dataset.confirm = '1';
+        resetBucket.classList.add('is-confirm');
+        resetBucket.textContent = 'Yakin kosongkan?';
+        if (bucketResetConfirmTimer) window.clearTimeout(bucketResetConfirmTimer);
+        bucketResetConfirmTimer = window.setTimeout(() => clearBucketResetConfirm(), 4000);
+        return;
+      }
+      clearBucketResetConfirm();
       resetBucketlist();
+      showToast('Daftar simpan dikosongkan.');
       return;
     }
 
@@ -1337,6 +1545,59 @@ function initCafeUi(): void {
     const visited = target.closest<HTMLButtonElement>('[data-cafe-visited]');
     if (visited) {
       toggleBucketVisited(visited.dataset.cafeVisited ?? '');
+      return;
+    }
+
+    const presetBtn = target.closest<HTMLButtonElement>('[data-catalog-preset]');
+    if (presetBtn && catalog) {
+      const preset = CATALOG_PRESETS.find((item) => item.id === presetBtn.dataset.catalogPreset);
+      if (preset) {
+        applyPreset(preset);
+        catalogShowAll = false;
+        syncCatalogUrl();
+        renderCatalog(catalog);
+        syncBucketControls();
+      }
+      return;
+    }
+
+    if (target.closest('[data-catalog-more]') && catalog) {
+      catalogShowAll = true;
+      renderCatalog(catalog);
+      syncBucketControls();
+      return;
+    }
+
+    const clearChip = target.closest<HTMLButtonElement>('[data-clear-chip]');
+    if (clearChip && catalog) {
+      const chipType = clearChip.dataset.clearChip;
+      const chipVal = clearChip.dataset.clearValue ?? '';
+      if (chipType === 'query') {
+        catalogState.query = '';
+        const searchEl = catalog.querySelector<HTMLInputElement>('[data-catalog-search]');
+        if (searchEl) searchEl.value = '';
+      } else if (chipType === 'city') {
+        catalogState.city = SEMUA_KOTA;
+        catalogState.area = '';
+      } else if (chipType === 'area') {
+        catalogState.area = '';
+      } else if (chipType === 'vibe') {
+        catalogState.vibes = catalogState.vibes.filter((v) => v !== chipVal);
+      } else if (chipType === 'facility') {
+        catalogState.facilities = catalogState.facilities.filter((f) => f !== chipVal);
+      } else if (chipType === 'price') {
+        catalogState.priceLevels = catalogState.priceLevels.filter((p) => p !== Number(chipVal));
+      } else if (chipType === 'open') {
+        catalogState.openNow = false;
+      } else if (chipType === 'sort') {
+        catalogState.sort = 'default';
+        const sortEl = catalog.querySelector<HTMLSelectElement>('[data-catalog-sort]');
+        if (sortEl) sortEl.value = 'default';
+      }
+      catalogShowAll = false;
+      syncCatalogUrl();
+      renderCatalog(catalog);
+      syncBucketControls();
       return;
     }
 
@@ -1523,6 +1784,18 @@ function initCafeUi(): void {
     if (event.key === 'Escape') {
       event.preventDefault();
       setBucketOpen(false);
+      return;
+    }
+
+    const tabTarget =
+      event.target instanceof Element ? event.target.closest<HTMLButtonElement>('[data-bucket-tab]') : null;
+    if (tabTarget && ['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+      event.preventDefault();
+      if (event.key === 'Home') activeTab = 'wishlist';
+      else if (event.key === 'End') activeTab = 'visited';
+      else activeTab = activeTab === 'wishlist' ? 'visited' : 'wishlist';
+      renderBucketlist();
+      document.querySelector<HTMLButtonElement>(`[data-bucket-tab="${activeTab}"]`)?.focus();
       return;
     }
 

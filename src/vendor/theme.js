@@ -116,28 +116,88 @@
     // [data-main] wrapper (they render inside sections, so relocate them).
     document.querySelectorAll('[data-main] .underlay-nav__menu, [data-main] .underlay-nav__overlay')
       .forEach(function (el) { document.body.appendChild(el); });
+    var menuEl = document.querySelector('.underlay-nav__menu');
+    var lastTrigger = null;
+
+    function syncToggles(open) {
+      document.querySelectorAll('[data-menu-toggle]').forEach(function (btn) {
+        btn.setAttribute('aria-expanded', String(open));
+        btn.setAttribute('aria-label', open ? 'Tutup menu' : 'Buka menu');
+      });
+    }
+
+    function openMenu(trigger) {
+      lastTrigger = trigger || document.querySelector('[data-menu-toggle]');
+      navFollowOn();
+      lockScroll();
+      document.body.dataset.menuStatus = 'open';
+      if (menuEl) menuEl.setAttribute('aria-hidden', 'false');
+      syncToggles(true);
+      if (menuEl) {
+        var firstTarget = isPhone()
+          ? (menuEl.querySelector('[data-menu-close]') || menuEl.querySelector('a, button'))
+          : (menuEl.querySelector('.underlay-nav__link-large, a, button'));
+        if (firstTarget && typeof firstTarget.focus === 'function') {
+          setTimeout(function () { firstTarget.focus(); }, 60);
+        }
+      }
+    }
+
+    function closeMenu(restoreFocus) {
+      if (document.body.dataset.menuStatus !== 'open') return;
+      navFollowOff();
+      unlockScroll();
+      document.body.dataset.menuStatus = 'closed';
+      if (menuEl) menuEl.setAttribute('aria-hidden', 'true');
+      syncToggles(false);
+      if (restoreFocus && lastTrigger && typeof lastTrigger.focus === 'function') {
+        lastTrigger.focus();
+      }
+      lastTrigger = null;
+    }
+
     root.querySelectorAll('[data-menu-toggle]').forEach(function (btn) {
       if (btn.dataset.bound) return; btn.dataset.bound = '1';
       btn.addEventListener('click', function () {
-        var open = document.body.dataset.menuStatus === 'open';
-        if (open) { navFollowOff(); unlockScroll(); } else { navFollowOn(); lockScroll(); }
-        document.body.dataset.menuStatus = open ? 'closed' : 'open';
-        btn.setAttribute('aria-expanded', String(!open));
-        btn.setAttribute('aria-label', open ? 'Buka menu' : 'Tutup menu');
+        if (document.body.dataset.menuStatus === 'open') closeMenu(false);
+        else openMenu(btn);
       });
     });
     root.querySelectorAll('[data-menu-close]').forEach(function (el) {
       if (el.dataset.bound) return; el.dataset.bound = '1';
       el.addEventListener('click', function () {
-        navFollowOff();
-        unlockScroll();
-        document.body.dataset.menuStatus = 'closed';
-        document.querySelectorAll('[data-menu-toggle]').forEach(function (btn) {
-          btn.setAttribute('aria-expanded', 'false');
-          btn.setAttribute('aria-label', 'Buka menu');
-        });
+        var href = el.getAttribute && el.getAttribute('href');
+        var isInPageHash = href && href.charAt(0) === '#';
+        closeMenu(!isInPageHash);
       });
     });
+
+    if (!document.body.dataset.menuKeysBound) {
+      document.body.dataset.menuKeysBound = '1';
+      document.addEventListener('keydown', function (e) {
+        if (document.body.dataset.menuStatus !== 'open') return;
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          closeMenu(true);
+          return;
+        }
+        if (e.key === 'Tab' && menuEl) {
+          var focusables = Array.prototype.slice.call(
+            menuEl.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])')
+          ).filter(function (node) { return node.offsetParent !== null || getComputedStyle(node).position === 'fixed'; });
+          if (!focusables.length) return;
+          var first = focusables[0];
+          var last = focusables[focusables.length - 1];
+          if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      });
+    }
   }
 
   /* ---- Reviews marquee ------------------------------------------------------
@@ -284,37 +344,7 @@
       }, { rootMargin: '-45% 0px -45% 0px' });
       items.forEach(function (it) { io.observe(it); });
 
-      // desktop: snap scroll. Once scrolling settles inside the steps, the
-      // nearest step's copy glides to the middle of the screen, so one step
-      // holds the stage at a time. Done in JS rather than CSS scroll-snap,
-      // which would fight Lenis's eased scroll; it uses Lenis when running.
-      // Near the section's ends it only snaps when close, so scrolling into or
-      // out of the section never gets pulled back.
-      var dq = window.matchMedia('(min-width: 1024px)');
-      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        var texts = Array.prototype.map.call(items, function (it) { return it.querySelector('.sticky-steps__text') || it; });
-        var snapT = 0, snapping = false;
-        var snap = function () {
-          if (!dq.matches || snapping) return;
-          var vh = window.innerHeight, best = -1, bd = Infinity;
-          texts.forEach(function (t, i) {
-            var r = t.getBoundingClientRect(), d = r.top + r.height / 2 - vh / 2;
-            if (Math.abs(d) < Math.abs(bd)) { bd = d; best = i; }
-          });
-          if (best < 0 || Math.abs(bd) < 4 || Math.abs(bd) > vh * 0.5) return;
-          if (best === 0 && bd > vh * 0.25) return;
-          if (best === texts.length - 1 && bd < -vh * 0.25) return;
-          var y = window.scrollY + bd;
-          snapping = true;
-          var done = function () { snapping = false; };
-          if (window.__lenis && window.__lenis.scrollTo) window.__lenis.scrollTo(y, { duration: 0.7, onComplete: done });
-          else { window.scrollTo({ top: y, behavior: 'smooth' }); setTimeout(done, 800); }
-        };
-        window.addEventListener('scroll', function () {
-          if (snapping) return;
-          clearTimeout(snapT); snapT = setTimeout(snap, 160);
-        }, { passive: true });
-      }
+      // desktop auto scroll-snapping intentionally disabled so deliberate scrolling is never hijacked
 
       // phones + tablets: the cards stack (sticky, CSS). As the incoming card slides
       // over, the outgoing one fades with how much it covers
@@ -763,13 +793,15 @@
     }
     var frame = function () {
       var r = mani.getBoundingClientRect();
-      var H = mani.offsetHeight || 1;
-      var vh = window.innerHeight;
-      var p = Math.max(0, Math.min(1, -r.top / Math.max(1, H - vh) * 1.15));
+      var vh = window.innerHeight || 800;
+      var start = vh * 0.8;
+      var end = Math.min(vh * 0.08, Math.max(-80, vh - (r.height || 320) - 24));
+      var span = Math.max(220, start - end);
+      var p = Math.max(0, Math.min(1, (start - r.top) / span));
       var lit = p * words.length;
       for (var i = 0; i < words.length; i++) {
         var w = words[i];
-        w.style.opacity = (0.14 + 0.86 * Math.max(0, Math.min(1, lit - i))).toFixed(3);
+        w.style.opacity = (0.22 + 0.78 * Math.max(0, Math.min(1, lit - i))).toFixed(3);
         if (w.classList.contains('w--x')) w.style.setProperty('--xp', Math.max(0, Math.min(1, (lit - i - 0.15) / 0.85)).toFixed(3));
       }
       marks.forEach(function (m) {
