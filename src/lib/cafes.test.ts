@@ -73,7 +73,7 @@ describe('waktu lokal per zona', () => {
 
 describe('jam operasional', () => {
   it('mengenali kafe yang sedang buka dan tutup', () => {
-    const asiang = CAFES_DATA.find((cafe) => cafe.id === 'asiang')!;
+    const asiang = CAFES_DATA.find((cafe) => cafe.id === 'warung-kopi-asiang')!;
     expect(isOpenAt(asiang, AT_10_WIB)).toBe(true);
     expect(isOpenAt(asiang, AT_23_WIB)).toBe(false);
     expect(getOpenStatus(asiang, AT_10_WIB)).toEqual({ open: true, label: 'Buka sekarang' });
@@ -90,10 +90,10 @@ describe('jam operasional', () => {
   });
 
   it('mendukung kafe 24 jam', () => {
-    const cw = CAFES_DATA.find((cafe) => cafe.id === 'cw-coffee-reformasi')!;
-    expect(isOpenAt(cw, AT_23_WIB)).toBe(true);
-    expect(isOpenAt(cw, new Date('2026-11-14T20:00:00Z'))).toBe(true);
-    expect(formatHours(cw)).toBe('Buka 24 jam');
+    const open24Cafe = CAFES_DATA.find((cafe) => cafe.id === 'warung-kopi-djaja')!;
+    expect(isOpenAt(open24Cafe, AT_23_WIB)).toBe(true);
+    expect(isOpenAt(open24Cafe, new Date('2026-11-14T20:00:00Z'))).toBe(true);
+    expect(formatHours(open24Cafe)).toBe('Buka 24 jam');
   });
 
   it('mendukung jam operasional yang melewati tengah malam', () => {
@@ -105,8 +105,8 @@ describe('jam operasional', () => {
   });
 
   it('menampilkan label zona waktu pada jam buka', () => {
-    const asiang = CAFES_DATA.find((cafe) => cafe.id === 'asiang')!;
-    expect(formatHours(asiang)).toBe('04:00 - 13:00 WIB');
+    const asiang = CAFES_DATA.find((cafe) => cafe.id === 'warung-kopi-asiang')!;
+    expect(formatHours(asiang)).toBe('04:00 - 18:00 WIB');
 
     const makassar = CAFES_DATA.find((cafe) => cafe.id === 'kopi-daeng-losari')!;
     expect(formatHours(makassar)).toBe('08:00 - 23:00 WITA');
@@ -136,15 +136,9 @@ describe('filter katalog', () => {
     expect(result.length).toBeGreaterThan(0);
     expect(result.every((cafe) => cafe.facilities.includes('Wi-Fi'))).toBe(true);
 
-    const searched = filterCafes(CAFES_DATA, { query: 'srikaya' });
+    const searched = filterCafes(CAFES_DATA, { query: 'asiang' });
     expect(searched.length).toBeGreaterThan(0);
-    expect(
-      searched.every(
-        (cafe) =>
-          cafe.menuHighlights.includes('Roti srikaya') ||
-          cafe.menuHighlights.includes('Roti kukus srikaya'),
-      ),
-    ).toBe(true);
+    expect(searched.every((cafe) => cafe.name.toLowerCase().includes('asiang'))).toBe(true);
   });
 
   it('menyaring kafe yang buka sekarang', () => {
@@ -312,14 +306,14 @@ describe('berbagi kafe & daftar simpan', () => {
 
 describe('jarak, radius, dan kawasan', () => {
   it('menghitung jarak Haversine dan memformatnya dalam meter dan kilometer', () => {
-    const asiang = CAFES_DATA.find((c) => c.id === 'asiang')!;
-    const cw = CAFES_DATA.find((c) => c.id === 'cw-coffee-reformasi')!;
+    const asiang = CAFES_DATA.find((c) => c.id === 'warung-kopi-asiang')!;
+    const serdam = CAFES_DATA.find((c) => c.id === 'fg-coffee-sungai-raya-dalam')!;
     const kemang = CAFES_DATA.find((c) => c.id === 'anomali-kemang')!;
 
     expect(distanceKm({ lat: asiang.lat, lng: asiang.lng }, { lat: asiang.lat, lng: asiang.lng })).toBe(0);
-    const pontianakDist = distanceKm({ lat: asiang.lat, lng: asiang.lng }, { lat: cw.lat, lng: cw.lng });
-    expect(pontianakDist).toBeGreaterThan(2);
-    expect(pontianakDist).toBeLessThan(6);
+    const pontianakDist = distanceKm({ lat: asiang.lat, lng: asiang.lng }, { lat: serdam.lat, lng: serdam.lng });
+    expect(pontianakDist).toBeGreaterThan(4);
+    expect(pontianakDist).toBeLessThan(10);
 
     const crossIslandDist = distanceKm(
       { lat: asiang.lat, lng: asiang.lng },
@@ -345,19 +339,19 @@ describe('jarak, radius, dan kawasan', () => {
     expect(within5Km.length).toBeGreaterThanOrEqual(within2Km.length);
 
     const gajahMada = filterCafes(CAFES_DATA, { city: 'Pontianak', area: 'Gajah Mada' });
-    expect(gajahMada.length).toBe(2);
+    expect(gajahMada.length).toBeGreaterThanOrEqual(2);
     expect(gajahMada.every((c) => c.area === 'Gajah Mada')).toBe(true);
   });
 
   it('menemukan kafe terdekat dan daftar kawasan unik per kota', () => {
     const nearest = findNearestCafe(CAFES_DATA, { lat: -0.029, lng: 109.341 });
-    expect(nearest?.cafe.id).toBe('asiang');
+    expect(nearest?.cafe.id).toBe('warung-kopi-asiang');
     expect(nearest?.distanceKm).toBeLessThan(0.5);
     expect(findNearestCafe([], { lat: 0, lng: 0 })).toBeUndefined();
 
     const areas = getAreasForCity(CAFES_DATA, 'Pontianak');
     expect(areas).toContain('Gajah Mada');
-    expect(areas).toContain('Reformasi');
+    expect(areas).toContain('Sungai Raya Dalam');
     expect(new Set(areas).size).toBe(areas.length);
   });
 });
@@ -408,6 +402,15 @@ describe('integritas skema data kafe', () => {
 
       const parsedUrl = new URL(cafe.mapsUrl);
       expect(parsedUrl.protocol).toBe('https:');
+      expect(Number.isFinite(cafe.lat)).toBe(true);
+      expect(Number.isFinite(cafe.lng)).toBe(true);
+      expect(cafe.lat).toBeGreaterThanOrEqual(-11.5);
+      expect(cafe.lat).toBeLessThanOrEqual(6.5);
+      expect(cafe.lng).toBeGreaterThanOrEqual(94.5);
+      expect(cafe.lng).toBeLessThanOrEqual(141.5);
+      if (cafe.image !== undefined) {
+        expect(cafe.image.startsWith('/assets/') || cafe.image.startsWith('https://')).toBe(true);
+      }
       expect(cafe.accentColor).toMatch(hexColorRegex);
     }
   });

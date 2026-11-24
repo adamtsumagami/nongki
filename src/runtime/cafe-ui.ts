@@ -80,6 +80,24 @@ function esc(value: unknown): string {
   return String(value).replace(/[&<>"']/g, (char) => HTML_ENTITIES[char] ?? char);
 }
 
+function safeImageUrl(raw?: string): string | null {
+  const value = (raw ?? '').trim();
+  if (!value) return null;
+  if (value.startsWith('/assets/')) return value;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'https:' ? parsed.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+function cafePhotoMarkup(cafe: Cafe): string {
+  const src = safeImageUrl(cafe.image);
+  if (!src) return '';
+  return `<img class="cafe-photo" src="${esc(src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">`;
+}
+
 const ICONS = {
   pin: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>`,
   bookmark: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.8h12a1 1 0 0 1 1 1V21l-7-4.2L5 21V4.8a1 1 0 0 1 1-1Z"/></svg>`,
@@ -181,6 +199,7 @@ function renderCafeOfTheDay(container: HTMLElement): void {
     <article class="cod__card" style="--cod-accent:${esc(cafe.accentColor)}">
       <div class="cod__art">
         <span class="cod__mono">${esc(getInitials(cafe.name))}</span>
+        ${cafePhotoMarkup(cafe)}
         <span class="cod__art-area">${esc(cafe.city)}</span>
       </div>
       <div class="cod__body">
@@ -191,7 +210,7 @@ function renderCafeOfTheDay(container: HTMLElement): void {
         <h3 class="cod__name">${esc(cafe.name)}</h3>
         <p class="cod__tag">${esc(cafe.tagline)}</p>
         <div class="cod__facts">
-          <span><b>★ ${esc(cafe.rating.toFixed(1))}</b> ${esc(formatReviewCount(cafe.reviewCount))} ulasan</span>
+          <span><b>★ ${esc(cafe.rating.toFixed(1))}</b>${cafe.reviewCount > 0 ? ` ${esc(formatReviewCount(cafe.reviewCount))} ulasan` : ''}</span>
           <span>${esc(PRICE_LEVEL_SHORT[cafe.priceLevel])}</span>
           <span>${esc(hours)}</span>
         </div>
@@ -329,11 +348,11 @@ function renderCafeCard(cafe: Cafe, now: Date): string {
 
   return `
     <article class="cc" style="--cc-accent:${esc(cafe.accentColor)}">
-      <div class="cc__media" aria-hidden="true"><span class="cc__mono">${esc(getInitials(cafe.name))}</span></div>
+      <div class="cc__media" aria-hidden="true"><span class="cc__mono">${esc(getInitials(cafe.name))}</span>${cafePhotoMarkup(cafe)}</div>
       <div class="cc__main">
         <div class="cc__topline"><span class="cc__area">${esc(cafe.city)} · ${esc(cafe.area)}</span>${statusMarkup(cafe, now)}</div>
         <h3 class="cc__name">${esc(cafe.name)}</h3>
-        <div class="cc__meta"><span>★ ${esc(cafe.rating.toFixed(1))}</span><span>${esc(formatReviewCount(cafe.reviewCount))} ulasan</span><span>${esc(PRICE_LEVEL_SHORT[cafe.priceLevel])}</span><span>${esc(formatHours(cafe))}</span></div>
+        <div class="cc__meta"><span>★ ${esc(cafe.rating.toFixed(1))}</span>${cafe.reviewCount > 0 ? `<span>${esc(formatReviewCount(cafe.reviewCount))} ulasan</span>` : ''}<span>${esc(PRICE_LEVEL_SHORT[cafe.priceLevel])}</span><span>${esc(formatHours(cafe))}</span></div>
         <div class="cc__tags">${tags.map((tag) => `<span>${esc(tag)}</span>`).join('')}</div>
       </div>
       <div class="cc__side">
@@ -685,7 +704,7 @@ function renderPickerCard(cafe: Cafe, now: Date): string {
       <p class="rcard__tag">${esc(cafe.tagline)}</p>
       <div class="rcard__meta">
         <span>★ ${esc(cafe.rating.toFixed(1))}</span>
-        <span>${esc(formatReviewCount(cafe.reviewCount))} ulasan</span>
+        ${cafe.reviewCount > 0 ? `<span>${esc(formatReviewCount(cafe.reviewCount))} ulasan</span>` : ''}
         <span>${esc(PRICE_LEVEL_SHORT[cafe.priceLevel])}</span>
         <span>${esc(formatHours(cafe))}</span>
         ${distMeta}
@@ -811,7 +830,7 @@ function bucketItemMarkup(cafe: Cafe, tab: BucketTab, now: Date): string {
 
   return `
     <article class="bitem" style="--cc-accent:${esc(cafe.accentColor)}">
-      <div class="bitem__art" aria-hidden="true">${esc(getInitials(cafe.name))}</div>
+      <div class="bitem__art" aria-hidden="true">${esc(getInitials(cafe.name))}${cafePhotoMarkup(cafe)}</div>
       <div class="bitem__body">
         <h3 class="bitem__name">${esc(cafe.name)}</h3>
         <div class="bitem__meta">${esc(cafe.city)} · ${esc(cafe.area)} · ${esc(PRICE_LEVEL_SHORT[cafe.priceLevel])} · ${status.open ? 'buka sekarang' : 'sedang tutup'}</div>
@@ -1296,6 +1315,17 @@ function initCafeUi(): void {
       first.focus();
     }
   });
+
+  document.addEventListener(
+    'error',
+    (event) => {
+      const img = event.target;
+      if (img instanceof HTMLImageElement && img.classList.contains('cafe-photo')) {
+        img.remove();
+      }
+    },
+    true,
+  );
 
   subscribeBucketlist(() => syncBucketControls());
   syncBucketControls();

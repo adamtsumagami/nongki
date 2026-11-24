@@ -41,6 +41,7 @@ npx vitest run -t "<name>"             # single test by name
 index.html                 # main markup (page is one huge file — edit in chunks)
 public/assets/             # icons, SVG tiles, images (LFS for png/webp/otf)
 public/robots.txt          # crawler directives
+tools/scraper/             # Google Maps scraper & Stage 4 Cafe[] export pipeline (see tools/scraper/README.md)
 .github/workflows/ci.yml   # Vitest + tsc/Vite CI workflow
 src/data/cafes.ts          # seed cafe data (DUMMY — see below) + city metadata
 src/lib/cafes.ts           # filtering, sorting, URL sync, share formatting, timezone hours
@@ -69,9 +70,9 @@ src/main.ts, src/test/setup.ts
 
 - Lenis smooth scroll works; `data-lenis-prevent` on drawers opts out.
 - Cart/account/checkout/buying flow fully removed.
-- Seed data: 22 fictional cafes across 8 cities (Jakarta, Bandung, Yogyakarta, Surabaya, Medan, Makassar, Denpasar, Pontianak - Pontianak has 8, the rest 2 each), including WIB/WITA timezone handling and automated schema integrity checks in `src/lib/cafes.test.ts`.
+- Data state: 43 cafes across 8 cities — 29 Pontianak entries collected from Google Maps via `tools/scraper/` (`scrape-places.mjs` -> `normalize-pontianak.mjs` -> `export-cafes.mjs`) and 14 seed placeholders across Jakarta, Bandung, Yogyakarta, Surabaya, Medan, Makassar, and Denpasar (2 each), with WIB/WITA timezone handling and automated schema + Indonesia coordinate integrity checks in `src/lib/cafes.test.ts`.
 - Shared directory & random picker: `#cafe-of-the-day` renders on mobile hero and desktop `.cod-band`; single shared `#direktori` and `#random-picker` sections sit directly under `#MainContent` for both viewports.
-- Directory features: search, city/vibe/facility/price/open-now filters, sorting (`default`, `open`, `rating`, `price-asc`, `name`), URL query sync, cafe & bucketlist copy/share with toast feedback (`[data-toast]`), floating back-to-top button (`[data-back-to-top]`), and random picker city/open filters with Web Audio sound effects.
+- Directory features: search, city/vibe/facility/price/open-now filters, sorting (`default`, `open`, `rating`, `price-asc`, `name`), URL query sync, cafe & bucketlist copy/share with toast feedback (`[data-toast]`), floating back-to-top button (`[data-back-to-top]`), optional `cafe.image` rendering with monogram fallback, and random picker geolocation/manual location + area/open filters with Web Audio sound effects.
 - Firefox compatibility: `theme.js` removes `wheel`, `mousewheel`, and `DOMMouseScroll` listeners from Matter.js; sort `<select>` uses dark `color-scheme` and explicit `<option>` colors.
 - Open Graph & Twitter metadata plus `public/robots.txt` added; fictional testimonial copy replaced with Indonesian usage scenarios.
 - Legacy unreferenced assets removed (53 files: Apocalypse product images, bags, etc.). `public/assets/` is now ~40 files (~5 MB); `dist/` rebuilt at ~5.4 MB. Do not re-add those assets.

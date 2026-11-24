@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import rawHtml from '../index.html?raw';
+import { CAFES_DATA } from './data/cafes';
 import { resetSoundStateForTest } from './lib/sound';
 import themeSource from './vendor/theme.js?raw';
 import homeMSource from './vendor/home-m.js?raw';
@@ -112,13 +113,16 @@ describe('Nongki Platform', () => {
     expect(pontianakBtn).toBeDefined();
     pontianakBtn!.click();
 
+    const totalCafes = CAFES_DATA.length;
+    const pontianakCount = CAFES_DATA.filter((c) => c.city === 'Pontianak').length;
     const countEl = document.querySelector<HTMLElement>('[data-catalog-count]');
-    expect(countEl?.textContent).toContain('8 dari 22 kafe');
+    expect(countEl?.textContent).toContain(`${pontianakCount} dari ${totalCafes} kafe`);
+    expect(document.querySelectorAll('#direktori img.cafe-photo').length).toBeGreaterThan(0);
 
     const resetBtn = document.querySelector<HTMLButtonElement>('[data-catalog-reset]');
     expect(resetBtn?.disabled).toBe(false);
     resetBtn!.click();
-    expect(countEl?.textContent).toContain('22 dari 22 kafe');
+    expect(countEl?.textContent).toContain(`${totalCafes} dari ${totalCafes} kafe`);
   });
 
   it('saves and removes cafe in bucketlist drawer with Lenis opt-out', () => {
@@ -220,12 +224,14 @@ describe('Nongki Platform', () => {
     try {
       expect(susanLink.dataset.selectCity).toBe('Jakarta');
 
+      const totalCafes = CAFES_DATA.length;
+      const bandungCount = CAFES_DATA.filter((c) => c.city === 'Bandung').length;
       sideBag.click();
-      expect(countEl.textContent).toContain('22 dari 22 kafe');
+      expect(countEl.textContent).toContain(`${totalCafes} dari ${totalCafes} kafe`);
       expect(susanLink.dataset.selectCity).toBe('Bandung');
 
       susanLink.click();
-      expect(countEl.textContent).toContain('2 dari 22 kafe');
+      expect(countEl.textContent).toContain(`${bandungCount} dari ${totalCafes} kafe`);
       expect(window.location.search).toContain('kota=Bandung');
     } finally {
       document.querySelector<HTMLElement>('.rs__bag[data-select-city="Jakarta"]')?.click();
@@ -242,7 +248,8 @@ describe('Nongki Platform', () => {
       activeUfoBag.dispatchEvent(
         new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
       );
-      expect(countEl.textContent).toContain('2 dari 22 kafe');
+      const jakartaCount = CAFES_DATA.filter((c) => c.city === 'Jakarta').length;
+      expect(countEl.textContent).toContain(`${jakartaCount} dari ${CAFES_DATA.length} kafe`);
       expect(window.location.search).toContain('kota=Jakarta');
     } finally {
       document.querySelector<HTMLButtonElement>('[data-catalog-reset]')?.click();
@@ -262,7 +269,7 @@ describe('Nongki Platform', () => {
       sortSelect.value = 'name';
       sortSelect.dispatchEvent(new Event('change', { bubbles: true }));
       const sortedNames = names();
-      expect(sortedNames.length).toBe(22);
+      expect(sortedNames.length).toBe(CAFES_DATA.length);
       expect(sortedNames[0].localeCompare(sortedNames[1], 'id')).toBeLessThanOrEqual(0);
       expect(window.location.search).toContain('urut=name');
       expect(resetBtn.disabled).toBe(false);
