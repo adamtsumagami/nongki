@@ -555,7 +555,7 @@
     <p class="catalog__notice">Catatan: daftar kafe saat ini masih data contoh untuk pengembangan, bukan daftar usaha terverifikasi.</p>
     <label class="catalog__search">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4.2-4.2"/></svg>
-      <input type="search" inputmode="search" autocomplete="off" placeholder="Cari kafe, menu, atau kota" aria-label="Cari kafe" data-catalog-search />
+      <input id="catalog-search" name="q" type="search" inputmode="search" autocomplete="off" placeholder="Cari kafe, menu, atau kota" aria-label="Cari kafe" data-catalog-search />
     </label>
     <div class="fgroup">
       <div class="fgroup__k">Kota</div>
@@ -579,7 +579,7 @@
     </div>
     <div class="catalog__status">
       <div class="catalog__count" data-catalog-count></div>
-      <div class="catalog__tools"><label class="catalog__sort"><span>Urutkan</span><select data-catalog-sort aria-label="Urutkan kafe"><option value="default">Bawaan</option><option value="open">Buka dulu</option><option value="rating">Rating tertinggi</option><option value="price-asc">Harga termurah</option><option value="name">Nama A–Z</option></select></label><button class="catalog__reset" type="button" data-catalog-reset disabled>Reset filter</button></div>
+      <div class="catalog__tools"><label class="catalog__sort"><span>Urutkan</span><select id="catalog-sort" name="urut" data-catalog-sort aria-label="Urutkan kafe"><option value="default">Bawaan</option><option value="open">Buka dulu</option><option value="rating">Rating tertinggi</option><option value="price-asc">Harga termurah</option><option value="name">Nama A–Z</option></select></label><button class="catalog__reset" type="button" data-catalog-reset disabled>Reset filter</button></div>
     </div>
     <div class="cc-grid" data-catalog-grid></div>
     <div class="catalog__empty" data-catalog-empty hidden>
