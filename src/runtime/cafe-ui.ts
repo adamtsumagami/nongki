@@ -1,12 +1,6 @@
 /**
- * Runtime UI Nongki, Fase 1:
- * - Kafe Pilihan Hari Ini di hero mobile
- * - katalog + filter
- * - pemilih acak
- * - laci daftar simpan
- *
- * Semua teks berasal dari data statis, tetapi tetap di-escape karena nanti
- * data bisa datang dari luar (mis. CMS atau API).
+ * Nongki interactive UI runtime:
+ * Cafe of the Day, directory filtering & corridor chips, random picker, and bucketlist drawer.
  */
 
 import {
@@ -36,13 +30,14 @@ import {
   formatDistanceKm,
   formatHours,
   formatReviewCount,
+  getAreasForCity,
   getCafeById,
   getCafeOfTheDay,
   getDailyLabel,
-  getAreasForCity,
   getInitials,
-  getOpenStatus,
   getLocalDateKey,
+  getOpenStatus,
+  isOpenAt,
   parseCatalogSearchParams,
   pickRandomCafe,
   serializeCatalogSearchParams,
@@ -63,10 +58,7 @@ import {
   toggleBucketWishlist,
   type BucketTab,
 } from '../lib/bucketlist';
-import {
-  playPickerReveal,
-  playPickerTick,
-} from '../lib/sound';
+import { playPickerReveal, playPickerTick } from '../lib/sound';
 
 const HTML_ENTITIES: Record<string, string> = {
   '&': '&amp;',
@@ -95,7 +87,7 @@ function safeImageUrl(raw?: string): string | null {
 function cafePhotoMarkup(cafe: Cafe): string {
   const src = safeImageUrl(cafe.image);
   if (!src) return '';
-  return `<img class="cafe-photo" src="${esc(src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">`;
+  return `<img class="cafe-photo" src="${esc(src)}" alt="" width="320" height="240" loading="lazy" decoding="async" referrerpolicy="no-referrer">`;
 }
 
 const ICONS = {
@@ -118,7 +110,8 @@ function saveButton(
 ): string {
   const on = isWishlisted(cafe.id);
   const label = on ? options.active : options.idle;
-  return `<button class="${options.className}${on ? ' is-on' : ''}" type="button" data-cafe-save="${esc(cafe.id)}" data-label-idle="${esc(options.idle)}" data-label-active="${esc(options.active)}" aria-pressed="${on}" aria-label="${on ? 'Hapus dari daftar simpan' : 'Simpan ke daftar simpan'}">${ICONS.bookmark}<span data-save-label>${esc(label)}</span></button>`;
+  const aria = on ? 'Hapus dari daftar simpan' : 'Simpan ke daftar simpan';
+  return `<button class="${options.className}${on ? ' is-on' : ''}" type="button" data-cafe-save="${esc(cafe.id)}" data-label-idle="${esc(options.idle)}" data-label-active="${esc(options.active)}" aria-pressed="${on}" aria-label="${aria}" title="${aria}">${ICONS.bookmark}<span data-save-label>${esc(label)}</span></button>`;
 }
 
 function visitedButton(
@@ -127,21 +120,62 @@ function visitedButton(
 ): string {
   const on = isVisited(cafe.id);
   const label = on ? options.active : options.idle;
-  return `<button class="${options.className}${on ? ' is-on' : ''}" type="button" data-cafe-visited="${esc(cafe.id)}" data-label-idle="${esc(options.idle)}" data-label-active="${esc(options.active)}" aria-pressed="${on}" aria-label="${on ? 'Batalkan tanda sudah dikunjungi' : 'Tandai sudah dikunjungi'}">${ICONS.check}<span data-visited-label>${esc(label)}</span></button>`;
+  const aria = on ? 'Batalkan tanda sudah dikunjungi' : 'Tandai sudah dikunjungi';
+  return `<button class="${options.className}${on ? ' is-on' : ''}" type="button" data-cafe-visited="${esc(cafe.id)}" data-label-idle="${esc(options.idle)}" data-label-active="${esc(options.active)}" aria-pressed="${on}" aria-label="${aria}" title="${aria}">${ICONS.check}<span data-visited-label>${esc(label)}</span></button>`;
 }
 
 function shareButton(cafe: Cafe, options: { className: string; label: string }): string {
-  return `<button class="${options.className}" type="button" data-cafe-share="${esc(cafe.id)}" aria-label="Bagikan ${esc(cafe.name)}">${ICONS.share}<span data-share-label>${esc(options.label)}</span></button>`;
+  const aria = `Bagikan ${esc(cafe.name)}`;
+  return `<button class="${options.className}" type="button" data-cafe-share="${esc(cafe.id)}" aria-label="${aria}" title="${aria}">${ICONS.share}<span data-share-label>${esc(options.label)}</span></button>`;
 }
-
-/* ------------------------------------------------------------------ */
-/* Kafe Pilihan Hari Ini                                               */
-/* ------------------------------------------------------------------ */
 
 const CITY_SET = new Set<string>(CITIES);
 
 function isCity(value: string): value is City {
   return CITY_SET.has(value);
+}
+
+function countByCity(): Map<City, number> {
+  const counts = new Map<City, number>();
+  for (const city of CITIES) counts.set(city, 0);
+  for (const cafe of CAFES_DATA) {
+    counts.set(cafe.city, (counts.get(cafe.city) ?? 0) + 1);
+  }
+  return counts;
+}
+
+function syncDirectoryStats(now: Date = new Date()): void {
+  const counts = countByCity();
+  const openCount = CAFES_DATA.filter((cafe) => isOpenAt(cafe, now)).length;
+  const ptkCount = counts.get('Pontianak') ?? 0;
+
+  document.querySelectorAll<HTMLElement>('[data-stat-total]').forEach((el) => {
+    el.textContent = String(CAFES_DATA.length);
+  });
+  document.querySelectorAll<HTMLElement>('[data-stat-open]').forEach((el) => {
+    el.textContent = String(openCount);
+  });
+  document.querySelectorAll<HTMLElement>('[data-stat-cities]').forEach((el) => {
+    el.textContent = String(CITIES.length);
+  });
+  document.querySelectorAll<HTMLElement>('[data-stat-ptk]').forEach((el) => {
+    el.textContent = String(ptkCount);
+  });
+
+  document.querySelectorAll<HTMLElement>('[data-susan-item][data-select-city]').forEach((item) => {
+    const city = item.dataset.selectCity ?? '';
+    if (isCity(city)) {
+      item.dataset.price = `${counts.get(city) ?? 0} kafe`;
+    }
+  });
+
+  document.querySelectorAll<HTMLElement>('[data-ufo-bag][data-select-city]').forEach((bag) => {
+    const city = bag.dataset.selectCity ?? '';
+    const valueEl = bag.querySelector<HTMLElement>('.ufo__pricetag-v');
+    if (isCity(city) && valueEl) {
+      valueEl.textContent = `${counts.get(city) ?? 0} kafe`;
+    }
+  });
 }
 
 function scrollToSection(target: Element): void {
@@ -190,6 +224,7 @@ function renderCafeOfTheDay(container: HTMLElement): void {
 
   const status = getOpenStatus(cafe, now);
   const hours = formatHours(cafe);
+  const pillTags = [...cafe.vibes.slice(0, 2), ...cafe.facilities.slice(0, 2)];
 
   container.innerHTML = `
     <div class="cod__head">
@@ -200,7 +235,10 @@ function renderCafeOfTheDay(container: HTMLElement): void {
       <div class="cod__art">
         <span class="cod__mono">${esc(getInitials(cafe.name))}</span>
         ${cafePhotoMarkup(cafe)}
-        <span class="cod__art-area">${esc(cafe.city)}</span>
+        <div class="cod__art-badges">
+          <span class="cod__art-area">${esc(cafe.city)}</span>
+          <span class="cod__art-price">${esc(PRICE_LEVEL_SHORT[cafe.priceLevel])}</span>
+        </div>
       </div>
       <div class="cod__body">
         <div class="cod__row">
@@ -211,14 +249,16 @@ function renderCafeOfTheDay(container: HTMLElement): void {
         <p class="cod__tag">${esc(cafe.tagline)}</p>
         <div class="cod__facts">
           <span><b>★ ${esc(cafe.rating.toFixed(1))}</b>${cafe.reviewCount > 0 ? ` ${esc(formatReviewCount(cafe.reviewCount))} ulasan` : ''}</span>
-          <span>${esc(PRICE_LEVEL_SHORT[cafe.priceLevel])}</span>
+          <span>${esc(cafe.priceRange)}</span>
           <span>${esc(hours)}</span>
         </div>
+        <p class="cod__best"><b>Cocok untuk:</b> ${esc(cafe.bestFor)}</p>
         <div class="cod__tags">
-          ${cafe.vibes.slice(0, 3).map((vibe) => `<span>${esc(vibe)}</span>`).join('')}
+          ${pillTags.map((tag) => `<span>${esc(tag)}</span>`).join('')}
         </div>
         <div class="cod__actions">
-          <a class="cod__cta" href="${esc(cafe.mapsUrl)}" target="_blank" rel="noopener">Rute ke sana</a>
+          <a class="cod__cta" href="${esc(cafe.mapsUrl)}" target="_blank" rel="noopener">${ICONS.pin}<span>Rute ke sana</span></a>
+          <button class="cod__inspect" type="button" data-cod-inspect="${esc(cafe.id)}">Lihat detail</button>
           ${saveButton(cafe, { className: 'cod__save', idle: 'Simpan', active: 'Tersimpan' })}
           ${shareButton(cafe, { className: 'cod__share', label: 'Bagikan' })}
         </div>
@@ -227,13 +267,10 @@ function renderCafeOfTheDay(container: HTMLElement): void {
   `;
 }
 
-/* ------------------------------------------------------------------ */
-/* Katalog                                                             */
-/* ------------------------------------------------------------------ */
-
 interface CatalogState {
   query: string;
   city: CityFilter;
+  area: string;
   vibes: Vibe[];
   facilities: Facility[];
   priceLevels: PriceLevel[];
@@ -244,6 +281,7 @@ interface CatalogState {
 const catalogState: CatalogState = {
   query: '',
   city: SEMUA_KOTA,
+  area: '',
   vibes: [],
   facilities: [],
   priceLevels: [],
@@ -265,6 +303,7 @@ function hydrateCatalogFromUrl(catalog: HTMLElement): void {
   const parsed = parseCatalogSearchParams(window.location.search);
   catalogState.query = parsed.query;
   catalogState.city = parsed.city;
+  catalogState.area = '';
   catalogState.vibes = parsed.vibes;
   catalogState.facilities = parsed.facilities;
   catalogState.priceLevels = parsed.priceLevels;
@@ -282,8 +321,9 @@ function toggleValue<T>(list: T[], value: T): T[] {
   return list.includes(value) ? list.filter((item) => item !== value) : [...list, value];
 }
 
-function chip(value: string, group: string, label: string): string {
-  return `<button class="fchip" type="button" data-filter-group="${esc(group)}" data-filter-value="${esc(value)}" aria-pressed="false">${esc(label)}</button>`;
+function chip(value: string, group: string, label: string, count?: number): string {
+  const countBadge = count !== undefined ? ` <span class="fchip__n">${count}</span>` : '';
+  return `<button class="fchip" type="button" data-filter-group="${esc(group)}" data-filter-value="${esc(value)}" aria-pressed="false">${esc(label)}${countBadge}</button>`;
 }
 
 function buildCatalogChips(catalog: HTMLElement): void {
@@ -292,9 +332,13 @@ function buildCatalogChips(catalog: HTMLElement): void {
   const facilities = catalog.querySelector<HTMLElement>('[data-filter-facilities]');
   const prices = catalog.querySelector<HTMLElement>('[data-filter-price]');
   const open = catalog.querySelector<HTMLElement>('[data-filter-open]');
+  const counts = countByCity();
 
   if (city) {
-    city.innerHTML = [SEMUA_KOTA, ...CITIES].map((value) => chip(value, 'city', value)).join('');
+    city.innerHTML = [
+      chip(SEMUA_KOTA, 'city', SEMUA_KOTA, CAFES_DATA.length),
+      ...CITIES.map((value) => chip(value, 'city', value, counts.get(value) ?? 0)),
+    ].join('');
   }
   if (vibes) {
     vibes.innerHTML = VIBES.map((value) => chip(value, 'vibe', value)).join('');
@@ -312,6 +356,44 @@ function buildCatalogChips(catalog: HTMLElement): void {
   }
 }
 
+function renderCatalogCorridors(catalog: HTMLElement): void {
+  const groupEl = catalog.querySelector<HTMLElement>('[data-catalog-corridor-group]');
+  const cityLabelEl = catalog.querySelector<HTMLElement>('[data-catalog-corridor-city]');
+  const rowEl = catalog.querySelector<HTMLElement>('[data-catalog-corridors]');
+  if (!groupEl || !rowEl) return;
+
+  if (catalogState.city === SEMUA_KOTA) {
+    groupEl.hidden = true;
+    rowEl.innerHTML = '';
+    delete rowEl.dataset.renderedCity;
+    return;
+  }
+
+  const areas = getAreasForCity(CAFES_DATA, catalogState.city);
+  if (areas.length <= 1) {
+    groupEl.hidden = true;
+    rowEl.innerHTML = '';
+    delete rowEl.dataset.renderedCity;
+    return;
+  }
+
+  groupEl.hidden = false;
+  if (rowEl.dataset.renderedCity === catalogState.city) return;
+
+  const cityCafes = CAFES_DATA.filter((cafe) => cafe.city === catalogState.city);
+  const areaCounts = new Map<string, number>();
+  for (const cafe of cityCafes) {
+    areaCounts.set(cafe.area, (areaCounts.get(cafe.area) ?? 0) + 1);
+  }
+
+  if (cityLabelEl) cityLabelEl.textContent = `· ${catalogState.city}`;
+  rowEl.dataset.renderedCity = catalogState.city;
+  rowEl.innerHTML = [
+    chip('', 'corridor', 'Semua kawasan', cityCafes.length),
+    ...areas.map((area) => chip(area, 'corridor', area, areaCounts.get(area) ?? 0)),
+  ].join('');
+}
+
 function syncCatalogChips(catalog: HTMLElement): void {
   catalog.querySelectorAll<HTMLButtonElement>('[data-filter-group]').forEach((button) => {
     const group = button.dataset.filterGroup;
@@ -319,6 +401,7 @@ function syncCatalogChips(catalog: HTMLElement): void {
     let pressed = false;
 
     if (group === 'city') pressed = catalogState.city === value;
+    else if (group === 'corridor') pressed = catalogState.area === value;
     else if (group === 'vibe') pressed = catalogState.vibes.includes(value as Vibe);
     else if (group === 'facility') pressed = catalogState.facilities.includes(value as Facility);
     else if (group === 'price') pressed = catalogState.priceLevels.includes(Number(value) as PriceLevel);
@@ -328,10 +411,19 @@ function syncCatalogChips(catalog: HTMLElement): void {
   });
 }
 
+function syncSearchAdornments(catalog: HTMLElement): void {
+  const hasQuery = catalogState.query.trim().length > 0;
+  const clearBtn = catalog.querySelector<HTMLButtonElement>('[data-catalog-clear]');
+  const kbd = catalog.querySelector<HTMLElement>('.catalog__kbd');
+  if (clearBtn) clearBtn.hidden = !hasQuery;
+  if (kbd) kbd.hidden = hasQuery;
+}
+
 function hasActiveFilters(): boolean {
   return (
     catalogState.query.trim().length > 0 ||
     catalogState.city !== SEMUA_KOTA ||
+    catalogState.area.length > 0 ||
     catalogState.vibes.length > 0 ||
     catalogState.facilities.length > 0 ||
     catalogState.priceLevels.length > 0 ||
@@ -340,19 +432,17 @@ function hasActiveFilters(): boolean {
   );
 }
 
-function renderCafeCard(cafe: Cafe, now: Date): string {
-  const tags = [
-    ...cafe.vibes.slice(0, 2),
-    ...cafe.facilities.slice(0, 2),
-  ].slice(0, 3);
+function renderCafeCard(cafe: Cafe, now: Date, autoExpand = false): string {
+  const tags = [...cafe.vibes.slice(0, 2), ...cafe.facilities.slice(0, 2)];
 
   return `
-    <article class="cc" style="--cc-accent:${esc(cafe.accentColor)}">
+    <article class="cc" data-cafe-card="${esc(cafe.id)}" style="--cc-accent:${esc(cafe.accentColor)}">
       <div class="cc__media" aria-hidden="true"><span class="cc__mono">${esc(getInitials(cafe.name))}</span>${cafePhotoMarkup(cafe)}</div>
       <div class="cc__main">
         <div class="cc__topline"><span class="cc__area">${esc(cafe.city)} · ${esc(cafe.area)}</span>${statusMarkup(cafe, now)}</div>
         <h3 class="cc__name">${esc(cafe.name)}</h3>
-        <div class="cc__meta"><span>★ ${esc(cafe.rating.toFixed(1))}</span>${cafe.reviewCount > 0 ? `<span>${esc(formatReviewCount(cafe.reviewCount))} ulasan</span>` : ''}<span>${esc(PRICE_LEVEL_SHORT[cafe.priceLevel])}</span><span>${esc(formatHours(cafe))}</span></div>
+        <p class="cc__tagline">${esc(cafe.tagline)}</p>
+        <div class="cc__meta"><span><b>★ ${esc(cafe.rating.toFixed(1))}</b></span>${cafe.reviewCount > 0 ? `<span>${esc(formatReviewCount(cafe.reviewCount))} ulasan</span>` : ''}<span>${esc(PRICE_LEVEL_SHORT[cafe.priceLevel])}</span><span>${esc(formatHours(cafe))}</span></div>
         <div class="cc__tags">${tags.map((tag) => `<span>${esc(tag)}</span>`).join('')}</div>
       </div>
       <div class="cc__side">
@@ -363,11 +453,24 @@ function renderCafeCard(cafe: Cafe, now: Date): string {
           ${shareButton(cafe, { className: 'cc__icon', label: 'Bagikan' })}
         </div>
       </div>
-      <details class="cc__more">
-        <summary>Detail &amp; menu</summary>
-        <p>${esc(cafe.description)}</p>
-        <div class="cc__menu">${cafe.menuHighlights.map((item) => `<span>${esc(item)}</span>`).join('')}</div>
-        <p style="margin-top:8px">${esc(cafe.address)}</p>
+      <details class="cc__more"${autoExpand ? ' open' : ''}>
+        <summary>Detail, fasilitas &amp; menu</summary>
+        <div class="cc__dossier">
+          <p class="cc__desc">${esc(cafe.description)}</p>
+          <div class="cc__dgrid">
+            <div>
+              <span class="cc__dk">Cocok untuk</span>
+              <p class="cc__dv">${esc(cafe.bestFor)}</p>
+            </div>
+            <div>
+              <span class="cc__dk">Kisaran harga</span>
+              <p class="cc__dv">${esc(cafe.priceRange)} per orang</p>
+            </div>
+          </div>
+          ${cafe.facilities.length > 0 ? `<div class="cc__drow"><span class="cc__dk">Fasilitas</span><div class="cc__dfacs">${cafe.facilities.map((f) => `<span>${esc(f)}</span>`).join('')}</div></div>` : ''}
+          <div class="cc__drow"><span class="cc__dk">Menu andalan</span><div class="cc__menu">${cafe.menuHighlights.map((item) => `<span>${esc(item)}</span>`).join('')}</div></div>
+          <p class="cc__addr">${ICONS.pin}<span>${esc(cafe.address)}</span></p>
+        </div>
       </details>
     </article>
   `;
@@ -375,9 +478,14 @@ function renderCafeCard(cafe: Cafe, now: Date): string {
 
 function renderCatalog(catalog: HTMLElement): void {
   const now = new Date();
+  syncDirectoryStats(now);
+  renderCatalogCorridors(catalog);
+  syncSearchAdornments(catalog);
+
   const filtered = filterCafes(CAFES_DATA, {
     query: catalogState.query,
     city: catalogState.city,
+    area: catalogState.city === SEMUA_KOTA ? undefined : catalogState.area || undefined,
     vibes: catalogState.vibes,
     facilities: catalogState.facilities,
     priceLevels: catalogState.priceLevels,
@@ -385,6 +493,7 @@ function renderCatalog(catalog: HTMLElement): void {
     now,
   });
   const results = sortCafes(filtered, catalogState.sort, now);
+  const singleSearchMatch = results.length === 1 && catalogState.query.trim().length > 0;
 
   syncCatalogChips(catalog);
 
@@ -394,11 +503,17 @@ function renderCatalog(catalog: HTMLElement): void {
   const reset = catalog.querySelector<HTMLButtonElement>('[data-catalog-reset]');
 
   if (grid) {
-    grid.innerHTML = results.map((cafe) => renderCafeCard(cafe, now)).join('');
+    grid.innerHTML = results.map((cafe) => renderCafeCard(cafe, now, singleSearchMatch)).join('');
     grid.hidden = results.length === 0;
   }
   if (count) {
-    count.innerHTML = `<b>${results.length}</b> dari ${CAFES_DATA.length} kafe`;
+    const scopeSuffix =
+      catalogState.city !== SEMUA_KOTA
+        ? catalogState.area
+          ? ` · ${esc(catalogState.city)} (${esc(catalogState.area)})`
+          : ` · ${esc(catalogState.city)}`
+        : '';
+    count.innerHTML = `Menampilkan <b>${results.length}</b> dari ${CAFES_DATA.length} kafe${scopeSuffix}`;
   }
   if (empty) empty.hidden = results.length > 0;
   if (reset) reset.disabled = !hasActiveFilters();
@@ -408,13 +523,20 @@ function handleFilterClick(button: HTMLButtonElement, catalog: HTMLElement): voi
   const group = button.dataset.filterGroup;
   const value = button.dataset.filterValue ?? '';
 
-  if (group === 'city') catalogState.city = value as CityFilter;
-  else if (group === 'vibe') catalogState.vibes = toggleValue(catalogState.vibes, value as Vibe);
-  else if (group === 'facility') {
+  if (group === 'city') {
+    catalogState.city = value as CityFilter;
+    catalogState.area = '';
+  } else if (group === 'corridor') {
+    catalogState.area = catalogState.area === value ? '' : value;
+  } else if (group === 'vibe') {
+    catalogState.vibes = toggleValue(catalogState.vibes, value as Vibe);
+  } else if (group === 'facility') {
     catalogState.facilities = toggleValue(catalogState.facilities, value as Facility);
   } else if (group === 'price') {
     catalogState.priceLevels = toggleValue(catalogState.priceLevels, Number(value) as PriceLevel);
-  } else if (group === 'open') catalogState.openNow = !catalogState.openNow;
+  } else if (group === 'open') {
+    catalogState.openNow = !catalogState.openNow;
+  }
 
   syncCatalogUrl();
   renderCatalog(catalog);
@@ -423,6 +545,7 @@ function handleFilterClick(button: HTMLButtonElement, catalog: HTMLElement): voi
 function resetCatalog(catalog: HTMLElement): void {
   catalogState.query = '';
   catalogState.city = SEMUA_KOTA;
+  catalogState.area = '';
   catalogState.vibes = [];
   catalogState.facilities = [];
   catalogState.priceLevels = [];
@@ -439,9 +562,34 @@ function resetCatalog(catalog: HTMLElement): void {
   renderCatalog(catalog);
 }
 
-/* ------------------------------------------------------------------ */
-/* Random picker                                                       */
-/* ------------------------------------------------------------------ */
+function inspectCafeInCatalog(catalog: HTMLElement | null, cafeId: string): void {
+  const cafe = getCafeById(CAFES_DATA, cafeId);
+  if (!cafe) return;
+
+  if (catalog) {
+    catalogState.city = cafe.city;
+    catalogState.area = '';
+    catalogState.query = cafe.name;
+    catalogState.vibes = [];
+    catalogState.facilities = [];
+    catalogState.priceLevels = [];
+    catalogState.openNow = false;
+
+    const search = catalog.querySelector<HTMLInputElement>('[data-catalog-search]');
+    if (search) search.value = cafe.name;
+
+    syncCatalogUrl();
+    renderCatalog(catalog);
+    syncBucketControls();
+  }
+
+  const safeId = cafe.id.replace(/[^a-zA-Z0-9_-]/g, '');
+  const target =
+    catalog?.querySelector<HTMLElement>(`[data-cafe-card="${safeId}"]`) ??
+    catalog ??
+    document.querySelector('#direktori');
+  if (target) scrollToSection(target);
+}
 
 type PickerLocationMode = 'manual' | 'auto';
 type GeoStatus = 'idle' | 'loading' | 'ready' | 'error';
@@ -541,7 +689,7 @@ function renderPickerHint(picker: HTMLElement): void {
       if (button) button.disabled = true;
       if (out) {
         out.innerHTML =
-          '<div class="picker__hint">Menunggu lokasi perangkat untuk mencari kafe terdekat...</div>';
+          '<div class="picker__hint"><span class="picker__stage-badge">Mencari sinyal</span><p>Menunggu lokasi perangkat untuk mencari kafe terdekat...</p></div>';
       }
       return;
     }
@@ -549,7 +697,7 @@ function renderPickerHint(picker: HTMLElement): void {
     if (pickerGeoStatus === 'error' || !pickerGeoOrigin) {
       if (button) button.disabled = true;
       if (out) {
-        out.innerHTML = `<div class="picker__hint">Lokasi perangkat belum tersedia. Coba ambil ulang lokasi di atas atau pilih kota secara manual.<br><button class="picker__hint-btn" type="button" data-picker-switch-manual>Atur lokasimu</button></div>`;
+        out.innerHTML = `<div class="picker__hint"><span class="picker__stage-badge">Lokasi belum aktif</span><p>Lokasi perangkat belum tersedia. Coba ambil ulang lokasi di atas atau pilih kota secara manual.</p><button class="picker__hint-btn" type="button" data-picker-switch-manual>Atur lokasimu</button></div>`;
       }
       return;
     }
@@ -567,11 +715,11 @@ function renderPickerHint(picker: HTMLElement): void {
           ? '<button class="picker__hint-btn" type="button" data-picker-widen-radius="20">Perluas ke 20 km</button>'
           : '<button class="picker__hint-btn" type="button" data-picker-switch-manual>Atur lokasimu</button>';
 
-      out.innerHTML = `<div class="picker__hint">Belum ada kafe dalam radius <b>${pickerRadiusKm} km</b> (${esc(vibeLabel)}${esc(openLabel)}).${esc(nearestNote)}<br>${actionBtn}</div>`;
+      out.innerHTML = `<div class="picker__hint"><span class="picker__stage-badge">0 kandidat</span><p>Belum ada kafe dalam radius <b>${pickerRadiusKm} km</b> (${esc(vibeLabel)}${esc(openLabel)}).${esc(nearestNote)}</p>${actionBtn}</div>`;
       return;
     }
 
-    out.innerHTML = `<div class="picker__hint">Ada <b>${total}</b> kafe dalam radius <b>${pickerRadiusKm} km</b> (${esc(vibeLabel)}${esc(openLabel)}). Tekan tombol di atas, biar Nongki yang memilih.</div>`;
+    out.innerHTML = `<div class="picker__hint"><span class="picker__stage-badge">${total} kandidat siap diacak</span><div class="picker__stage-dice" aria-hidden="true">${ICONS.dice}</div><p>Ada <b>${total}</b> kafe dalam radius <b>${pickerRadiusKm} km</b> (${esc(vibeLabel)}${esc(openLabel)}). Tekan tombol pilih, biar Nongki menentukan tujuanmu.</p></div>`;
     return;
   }
 
@@ -586,11 +734,11 @@ function renderPickerHint(picker: HTMLElement): void {
         : pickerCity;
 
   if (total === 0) {
-    out.innerHTML = `<div class="picker__hint">Belum ada kafe yang cocok untuk <b>${esc(cityLabel)}</b> (${esc(vibeLabel)}${esc(openLabel)}). Coba ubah atau longgarkan filter.</div>`;
+    out.innerHTML = `<div class="picker__hint"><span class="picker__stage-badge">0 kandidat</span><p>Belum ada kafe yang cocok untuk <b>${esc(cityLabel)}</b> (${esc(vibeLabel)}${esc(openLabel)}). Coba ubah atau longgarkan filter.</p></div>`;
     return;
   }
 
-  out.innerHTML = `<div class="picker__hint">Ada <b>${total}</b> kafe di <b>${esc(cityLabel)}</b> (${esc(vibeLabel)}${esc(openLabel)}). Tekan tombol di atas, biar Nongki yang memilih.</div>`;
+  out.innerHTML = `<div class="picker__hint"><span class="picker__stage-badge">${total} kandidat siap diacak</span><div class="picker__stage-dice" aria-hidden="true">${ICONS.dice}</div><p>Ada <b>${total}</b> kafe di <b>${esc(cityLabel)}</b> (${esc(vibeLabel)}${esc(openLabel)}). Tekan tombol pilih, biar Nongki menentukan tujuanmu.</p></div>`;
 }
 
 function renderPickerQuick(picker: HTMLElement): void {
@@ -692,36 +840,49 @@ function renderPickerCard(cafe: Cafe, now: Date): string {
     pickerLocationMode === 'auto' && pickerGeoOrigin
       ? `<span class="rcard__dist">${esc(formatDistanceKm(distanceKm(pickerGeoOrigin, { lat: cafe.lat, lng: cafe.lng })))} dari lokasimu</span>`
       : '';
+  const chips = [...cafe.vibes.slice(0, 2), ...cafe.facilities.slice(0, 2)];
 
   return `
     <article class="rcard" style="--cc-accent:${esc(cafe.accentColor)}">
-      <span class="rcard__stamp">Pilihanmu</span>
-      <div class="rcard__top">
-        <span class="rcard__area">${esc(cafe.city)} · ${esc(cafe.area)}</span>
-        <span class="cc__status${status.open ? ' is-open' : ''}"><i></i>${esc(status.label)}</span>
+      <div class="rcard__art">
+        <span class="rcard__mono">${esc(getInitials(cafe.name))}</span>
+        ${cafePhotoMarkup(cafe)}
+        <span class="rcard__stamp">Pilihanmu</span>
       </div>
-      <h3 class="rcard__name">${esc(cafe.name)}</h3>
-      <p class="rcard__tag">${esc(cafe.tagline)}</p>
-      <div class="rcard__meta">
-        <span>★ ${esc(cafe.rating.toFixed(1))}</span>
-        ${cafe.reviewCount > 0 ? `<span>${esc(formatReviewCount(cafe.reviewCount))} ulasan</span>` : ''}
-        <span>${esc(PRICE_LEVEL_SHORT[cafe.priceLevel])}</span>
-        <span>${esc(formatHours(cafe))}</span>
-        ${distMeta}
-      </div>
-      <p class="rcard__best"><b>Cocok untuk</b><br>${esc(cafe.bestFor)}</p>
-      <div class="rcard__actions">
-        <a href="${esc(cafe.mapsUrl)}" target="_blank" rel="noopener">${ICONS.pin}Buka Peta</a>
-        ${saveButton(cafe, { className: 'rcard__save', idle: 'Simpan', active: 'Tersimpan' })}
-        ${shareButton(cafe, { className: 'rcard__share', label: 'Bagikan' })}
+      <div class="rcard__body">
+        <div class="rcard__top">
+          <span class="rcard__area">${esc(cafe.city)} · ${esc(cafe.area)}</span>
+          <span class="cc__status${status.open ? ' is-open' : ''}"><i></i>${esc(status.label)}</span>
+        </div>
+        <h3 class="rcard__name">${esc(cafe.name)}</h3>
+        <p class="rcard__tag">${esc(cafe.tagline)}</p>
+        <div class="rcard__meta">
+          <span><b>★ ${esc(cafe.rating.toFixed(1))}</b></span>
+          ${cafe.reviewCount > 0 ? `<span>${esc(formatReviewCount(cafe.reviewCount))} ulasan</span>` : ''}
+          <span>${esc(PRICE_LEVEL_SHORT[cafe.priceLevel])}</span>
+          <span>${esc(formatHours(cafe))}</span>
+          ${distMeta}
+        </div>
+        <div class="rcard__chips">
+          ${chips.map((item) => `<span>${esc(item)}</span>`).join('')}
+        </div>
+        <p class="rcard__best"><b>Cocok untuk</b><br>${esc(cafe.bestFor)}</p>
+        <div class="rcard__actions">
+          <a href="${esc(cafe.mapsUrl)}" target="_blank" rel="noopener">${ICONS.pin}Buka Peta</a>
+          <button class="rcard__respin" type="button" data-picker-respin>${ICONS.dice}<span>Acak lagi</span></button>
+          ${saveButton(cafe, { className: 'rcard__save', idle: 'Simpan', active: 'Tersimpan' })}
+          ${shareButton(cafe, { className: 'rcard__share', label: 'Bagikan' })}
+        </div>
       </div>
     </article>
   `;
 }
 
 function prefersReducedMotion(): boolean {
-  return typeof window.matchMedia === 'function' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  return (
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
 }
 
 function spinPicker(picker: HTMLElement): void {
@@ -755,7 +916,7 @@ function spinPicker(picker: HTMLElement): void {
     tick += 1;
     if (tick < tickCount) {
       const sample = pool[(tick * 3 + Math.floor(Math.random() * pool.length)) % pool.length];
-      out.innerHTML = `<div class="picker__rolling">${esc(sample.name)}</div>`;
+      out.innerHTML = `<div class="picker__rolling"><span class="picker__rolling-kicker">Mengacak pilihan...</span><strong>${esc(sample.name)}</strong><span class="picker__rolling-sub">${esc(sample.city)} · ${esc(sample.area)}</span></div>`;
       playPickerTick(tick, tickCount);
       pickerTimer = window.setTimeout(step, 55 + tick * 12);
       return;
@@ -769,10 +930,6 @@ function spinPicker(picker: HTMLElement): void {
 
   step();
 }
-
-/* ------------------------------------------------------------------ */
-/* Bucketlist drawer                                                   */
-/* ------------------------------------------------------------------ */
 
 let activeTab: BucketTab = 'wishlist';
 let bucketPreviousFocus: HTMLElement | null = null;
@@ -789,7 +946,8 @@ function setBucketOpen(open: boolean): void {
     .forEach((button) => button.setAttribute('aria-expanded', String(open)));
 
   if (open) {
-    bucketPreviousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    bucketPreviousFocus =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     bucket.querySelector<HTMLElement>('.bucket__close')?.focus();
   } else if (bucketPreviousFocus) {
     bucketPreviousFocus.focus();
@@ -892,29 +1050,37 @@ function syncBucketControls(): void {
   document.querySelectorAll<HTMLButtonElement>('[data-cafe-save]').forEach((button) => {
     const id = button.dataset.cafeSave ?? '';
     const on = isWishlisted(id);
+    const aria = on ? 'Hapus dari daftar simpan' : 'Simpan ke daftar simpan';
     button.classList.toggle('is-on', on);
     button.setAttribute('aria-pressed', String(on));
-    button.setAttribute('aria-label', on ? 'Hapus dari daftar simpan' : 'Simpan ke daftar simpan');
+    button.setAttribute('aria-label', aria);
+    button.setAttribute('title', aria);
     const label = button.querySelector('[data-save-label]');
-    if (label) label.textContent = on ? (button.dataset.labelActive ?? 'Tersimpan') : (button.dataset.labelIdle ?? 'Simpan');
+    if (label) {
+      label.textContent = on
+        ? (button.dataset.labelActive ?? 'Tersimpan')
+        : (button.dataset.labelIdle ?? 'Simpan');
+    }
   });
 
   document.querySelectorAll<HTMLButtonElement>('[data-cafe-visited]').forEach((button) => {
     const id = button.dataset.cafeVisited ?? '';
     const on = isVisited(id);
+    const aria = on ? 'Batalkan tanda sudah dikunjungi' : 'Tandai sudah dikunjungi';
     button.classList.toggle('is-on', on);
     button.setAttribute('aria-pressed', String(on));
-    button.setAttribute('aria-label', on ? 'Batalkan tanda sudah dikunjungi' : 'Tandai sudah dikunjungi');
+    button.setAttribute('aria-label', aria);
+    button.setAttribute('title', aria);
     const label = button.querySelector('[data-visited-label]');
-    if (label) label.textContent = on ? (button.dataset.labelActive ?? 'Dikunjungi') : (button.dataset.labelIdle ?? 'Tandai');
+    if (label) {
+      label.textContent = on
+        ? (button.dataset.labelActive ?? 'Dikunjungi')
+        : (button.dataset.labelIdle ?? 'Tandai');
+    }
   });
 
   renderBucketlist();
 }
-
-/* ------------------------------------------------------------------ */
-/* Wiring                                                              */
-/* ------------------------------------------------------------------ */
 
 let toastTimer: number | undefined;
 
@@ -958,7 +1124,11 @@ async function handleCafeShare(cafeId: string, button: HTMLButtonElement): Promi
     }
 
     const ok = await copyText(text);
-    showToast(ok ? `Tautan ${cafe.name} disalin.` : 'Gagal menyalin tautan. Coba salin dari bilah alamat.');
+    showToast(
+      ok
+        ? `Tautan ${cafe.name} disalin.`
+        : 'Gagal menyalin tautan. Coba salin dari bilah alamat.',
+    );
   } finally {
     button.disabled = false;
   }
@@ -978,7 +1148,9 @@ async function handleBucketShare(button: HTMLButtonElement): Promise<void> {
   button.disabled = true;
   try {
     const ok = await copyText(text);
-    showToast(ok ? `Daftar simpan disalin (${cafes.length} kafe).` : 'Gagal menyalin daftar simpan.');
+    showToast(
+      ok ? `Daftar simpan disalin (${cafes.length} kafe).` : 'Gagal menyalin daftar simpan.',
+    );
   } finally {
     button.disabled = getBucketlist()[activeTab].length === 0;
   }
@@ -987,6 +1159,7 @@ async function handleBucketShare(button: HTMLButtonElement): Promise<void> {
 function selectCatalogCity(catalog: HTMLElement | null, city: City): void {
   if (catalog) {
     catalogState.city = city;
+    catalogState.area = '';
     syncCatalogUrl();
     renderCatalog(catalog);
   }
@@ -994,19 +1167,34 @@ function selectCatalogCity(catalog: HTMLElement | null, city: City): void {
   if (target) scrollToSection(target);
 }
 
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  return (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement ||
+    target.isContentEditable
+  );
+}
+
 function initCafeUi(): void {
   const cods = Array.from(document.querySelectorAll<HTMLElement>('[data-cafe-of-day]'));
   const catalog = document.querySelector<HTMLElement>('[data-catalog]');
   const picker = document.querySelector<HTMLElement>('[data-picker]');
+
+  syncDirectoryStats();
 
   if (cods.length === 0 && !catalog && !picker) return;
 
   if (cods.length > 0) {
     renderAllCafeOfTheDay(cods);
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible' && getLocalDateKey() !== codDateKey) {
-        renderAllCafeOfTheDay(cods);
-        syncBucketControls();
+      if (document.visibilityState === 'visible') {
+        syncDirectoryStats();
+        if (getLocalDateKey() !== codDateKey) {
+          renderAllCafeOfTheDay(cods);
+          syncBucketControls();
+        }
       }
     });
   }
@@ -1021,6 +1209,7 @@ function initCafeUi(): void {
       catalogState.query = search.value;
       syncCatalogUrl();
       renderCatalog(catalog);
+      syncBucketControls();
     });
 
     const sortSelect = catalog.querySelector<HTMLSelectElement>('[data-catalog-sort]');
@@ -1031,6 +1220,7 @@ function initCafeUi(): void {
         : 'default';
       syncCatalogUrl();
       renderCatalog(catalog);
+      syncBucketControls();
     });
   }
 
@@ -1052,6 +1242,25 @@ function initCafeUi(): void {
 
     if (target.closest('[data-back-to-top]')) {
       scrollToTop();
+      return;
+    }
+
+    const codInspect = target.closest<HTMLButtonElement>('[data-cod-inspect]');
+    if (codInspect) {
+      inspectCafeInCatalog(catalog, codInspect.dataset.codInspect ?? '');
+      return;
+    }
+
+    if (target.closest('[data-catalog-clear]') && catalog) {
+      catalogState.query = '';
+      const search = catalog.querySelector<HTMLInputElement>('[data-catalog-search]');
+      if (search) {
+        search.value = '';
+        search.focus();
+      }
+      syncCatalogUrl();
+      renderCatalog(catalog);
+      syncBucketControls();
       return;
     }
 
@@ -1134,11 +1343,13 @@ function initCafeUi(): void {
     const filter = target.closest<HTMLButtonElement>('[data-filter-group]');
     if (filter && catalog) {
       handleFilterClick(filter, catalog);
+      syncBucketControls();
       return;
     }
 
-    if (target.closest('[data-catalog-reset]') && catalog) {
+    if (target.closest('[data-catalog-reset], [data-catalog-empty-reset]') && catalog) {
       resetCatalog(catalog);
+      syncBucketControls();
       return;
     }
 
@@ -1239,7 +1450,7 @@ function initCafeUi(): void {
       return;
     }
 
-    if (target.closest('[data-picker-spin]') && picker) {
+    if (target.closest('[data-picker-spin], [data-picker-respin]') && picker) {
       spinPicker(picker);
       return;
     }
@@ -1251,7 +1462,7 @@ function initCafeUi(): void {
       const codTarget =
         desktopCod && window.getComputedStyle(desktopCod).display !== 'none'
           ? desktopCod
-          : mobileCod ?? desktopCod;
+          : (mobileCod ?? desktopCod);
       if (codTarget) {
         event.preventDefault();
         scrollToSection(codTarget);
@@ -1289,6 +1500,24 @@ function initCafeUi(): void {
   });
 
   document.addEventListener('keydown', (event) => {
+    if (
+      event.key === '/' &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.altKey &&
+      !isBucketOpen() &&
+      document.body.dataset.menuStatus !== 'open' &&
+      !isEditableTarget(event.target)
+    ) {
+      const search = catalog?.querySelector<HTMLInputElement>('[data-catalog-search]');
+      if (search) {
+        event.preventDefault();
+        search.focus();
+        if (catalog) scrollToSection(catalog);
+      }
+      return;
+    }
+
     if (!isBucketOpen()) return;
 
     if (event.key === 'Escape') {

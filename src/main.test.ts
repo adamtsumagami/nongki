@@ -550,4 +550,67 @@ describe('Nongki Platform', () => {
       vi.useRealTimers();
     }
   });
+  it('syncs directory live stats, quick-nav links, corridor sub-filters, search clear, and COD detail jump', () => {
+    const quickLinks = document.querySelectorAll('.site-nav__quick .site-nav__qlink');
+    expect(quickLinks.length).toBeGreaterThanOrEqual(4);
+
+    const totalStat = document.querySelector<HTMLElement>('#direktori [data-stat-total]');
+    const ptkStat = document.querySelector<HTMLElement>('[data-stat-ptk]');
+    expect(totalStat?.textContent?.trim()).toBe(String(CAFES_DATA.length));
+    expect(ptkStat?.textContent?.trim()).toBe(
+      String(CAFES_DATA.filter((c) => c.city === 'Pontianak').length),
+    );
+
+    const corridorGroup = document.querySelector<HTMLElement>('[data-catalog-corridor-group]')!;
+    const resetBtn = document.querySelector<HTMLButtonElement>('[data-catalog-reset]')!;
+    const searchInput = document.querySelector<HTMLInputElement>('[data-catalog-search]')!;
+    const clearBtn = document.querySelector<HTMLButtonElement>('[data-catalog-clear]')!;
+
+    try {
+      expect(corridorGroup.hidden).toBe(true);
+      expect(clearBtn.hidden).toBe(true);
+
+      const cityButtons = Array.from(
+        document.querySelectorAll<HTMLButtonElement>('[data-filter-city] button'),
+      );
+      const pontianakBtn = cityButtons.find((btn) => btn.textContent?.trim().startsWith('Pontianak'))!;
+      pontianakBtn.click();
+      expect(corridorGroup.hidden).toBe(false);
+
+      const gajahMadaChip = document.querySelector<HTMLButtonElement>(
+        '[data-catalog-corridors] [data-filter-value="Gajah Mada"]',
+      )!;
+      expect(gajahMadaChip).not.toBeNull();
+      gajahMadaChip.click();
+      expect(gajahMadaChip.getAttribute('aria-pressed')).toBe('true');
+
+      const expectedGm = CAFES_DATA.filter(
+        (c) => c.city === 'Pontianak' && c.area === 'Gajah Mada',
+      ).length;
+      expect(document.querySelectorAll('#direktori .cc')).toHaveLength(expectedGm);
+
+      // Inspect button on Cafe of the Day jumps to that cafe and auto-expands dossier
+      const inspectBtn = document.querySelector<HTMLButtonElement>(
+        '[data-cafe-of-day="desktop"] [data-cod-inspect]',
+      )!;
+      expect(inspectBtn).not.toBeNull();
+      inspectBtn.click();
+      expect(clearBtn.hidden).toBe(false);
+      expect(document.querySelectorAll('#direktori .cc')).toHaveLength(1);
+      expect(document.querySelector('#direktori .cc__more')?.hasAttribute('open')).toBe(true);
+
+      // Clear search button restores city list and hides itself
+      clearBtn.click();
+      expect(searchInput.value).toBe('');
+      expect(clearBtn.hidden).toBe(true);
+
+      // Slash shortcut focuses search input
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: '/', bubbles: true }));
+      expect(document.activeElement).toBe(searchInput);
+    } finally {
+      resetBtn.click();
+      window.history.replaceState(null, '', '/');
+    }
+  });
 });
+
