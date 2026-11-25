@@ -49,22 +49,26 @@
 
 .hero__stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, auto));
+  grid-template-columns: repeat(4, minmax(0, auto));
   justify-content: start;
-  gap: 0;
+  gap: 14px 0;
   margin-top: 24px;
   padding-top: 16px;
   border-top: 1px solid rgba(26, 26, 26, .18);
-  max-width: 480px;
+  max-width: 560px;
 }
 
 .hero__stat {
-  padding-right: 22px;
+  padding-right: 18px;
 }
 
 .hero__stat+.hero__stat {
-  padding-left: 22px;
+  padding-left: 18px;
   border-left: 1px solid rgba(26, 26, 26, .18);
+}
+
+.hero__stat dd.is-live {
+  color: #1f7a3d;
 }
 
 .hero__stat dt {

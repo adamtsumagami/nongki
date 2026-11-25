@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 410 124" width="820" height="248" role="img" aria-label="Nongki">
+  <g transform="translate(4 0)">
+    <path fill="#F4B63F" fill-rule="evenodd" d="M52 52C52 52 34 38 34 26a18 18 0 0 1 36 0C70 38 52 52 52 52ZM46 26a6 6 0 1 0 12 0a6 6 0 1 0-12 0Z"/>
+    <g fill="none" stroke="#F6EBDD" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M28 64H76V76C76 90 66 98 52 98C38 98 28 90 28 76Z"/>
+      <path d="M76 70H82a9 9 0 0 1 0 18H73"/>
+      <path d="M20 108H84"/>
+    </g>
+  </g>
+  <g transform="translate(131 24)">
+  <g fill="none" stroke="#F6EBDD" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 20V60M0 38C0 26 8 20 18 20C28 20 34 26 34 38V60"/>
+    <circle cx="70" cy="40" r="19"/>
+    <path d="M106 20V60M106 38C106 26 114 20 124 20C134 20 140 26 140 38V60"/>
+    <circle cx="178" cy="40" r="19"/>
+    <path d="M197 20V66C197 78 188 84 177 84C171 84 166 82 163 79"/>
+    <path d="M214 -4V60M242 20L214 42M223 35L244 60"/>
+    <path d="M262 20V60"/>
+  </g>
+  <circle cx="262" cy="3" r="6" fill="#F4B63F"/>
+  </g>
+</svg>

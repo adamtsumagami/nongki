@@ -1,50 +1,120 @@
+<div align="center">
+
+<img src="./docs/nongki-banner.png" alt="Nongki Banner" width="100%">
+
 # Nongki
 
-A web app for finding a cafe in Indonesia. Pick a city, filter by what you actually need (open now, seats, wi-fi), save a few to visit, or hit the random-pick button when you can't decide.
+**An Indonesia cafe & warkop directory. Vite + TypeScript, ad-free, no account required.**
 
-Status: in development. Pontianak listings (29 cafes) are collected from Google Maps via `tools/scraper/`; the other seven cities still use placeholder entries.
+**Nongki** helps remote workers, students, and coffee lovers decide where to hang out across
+**Pontianak, Jakarta, Yogyakarta, Bandung, Bogor, and Surabaya** — with live open status, vibe and
+facility filters, a geolocation random picker, and a local saved list built right into your browser.
 
-## What it does
+*Status: in development — 222 places across 6 cities collected via the built-in scraper pipeline.*
 
-- Lists cafes across eight Indonesian cities (Jakarta, Bandung, Yogyakarta, Surabaya, Medan, Makassar, Denpasar, Pontianak) with area, hours, price range, facilities, and a Maps link.
-- Search, filters, and sorting: filter by city, vibe, facilities (Wi-Fi, outlets, smoking area, musala), price level, and open now, or sort by open status, rating, price, or name with URL query sync.
-- Cafe of the day on both mobile and desktop views.
-- Random picker with geolocation radius (`2–20 km`), manual city/area, vibe, and open-now filters plus Web Audio API sound effects.
-- Save cafes to a local bucketlist stored in your browser (with copy-to-clipboard sharing and a back-to-top button). No account required.
+</div>
 
-## Stack
+---
 
-Vite, TypeScript, plain CSS, Lenis (smooth scrolling), Matter.js (physics animation), Vitest. No backend; the saved list lives in `localStorage`.
+## Features
 
-## Run it
+<table>
+<tr>
+<td width="50%" valign="top">
 
-Node 18+.
+**Directory & Filtering**
+
+- 222 cafes, coffee shops, and warkops across 6 cities
+- Filter by city, street corridor, vibe, facilities, price tier, and open now
+- Sort by recommendation, open status, rating, lowest price, or name (`A–Z`)
+- Shareable filter state synced directly to URL query parameters
+- Quick keyboard search with `/` and instant filter reset
+
+</td>
+<td width="50%" valign="top">
+
+**Discovery & Random Picker**
+
+- Daily curated *Kafe Pilihan Hari Ini* on both desktop and mobile views
+- Random picker (*Pilih Acak*) with Web Audio sound cues
+- Device location mode with selectable search radius (`2–20 km`)
+- Manual fallback by city, area, vibe, and open-now status
+- Expandable cafe dossier cards with map links and highlights
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+**Save, Suggest & Share**
+
+- Local bucketlist (*Daftar Simpan*) split into *Mau ke sini* and *Sudah ke sini*
+- One-click share text formatted cleanly for group chats
+- Built-in *Usulkan Kafe* tab so visitors can suggest missing spots directly
+- Formatted email pre-fill to `support@nongki.me` plus local suggestion history
+
+</td>
+<td valign="top">
+
+**Clean & Private**
+
+- Zero ads, zero tracking, zero sign-up walls
+- No backend or SSR — saved lists and preferences stay on your device
+- Smooth desktop scrolling via Lenis and interactive bean physics via Matter.js
+- Responsive layouts tailored separately for mobile and desktop viewports
+
+</td>
+</tr>
+</table>
+
+---
+
+## Running Locally
+
+Requires **Node.js 18+**.
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open http://localhost:5173. Also `npm run test`, `npm run build`, `npm run preview`.
+Open `http://localhost:5173`. Additional scripts:
 
-## Layout
-
-```text
-public/            static assets
-src/
-  data/            cafe data model and seed entries
-  lib/             filtering, sorting, URL query helpers, bucketlist storage, Web Audio sound
-  runtime/         UI behavior (catalog, picker, bucketlist, sharing, back-to-top)
-  styles/          CSS
-  vendor/          third-party scripts
-index.html         the page
-vite.config.ts     build config
+```bash
+npm run test      # run Vitest unit and jsdom integration suites
+npm run build     # type-check with tsc -b and build dist/ via Vite
+npm run preview   # preview the production build locally
 ```
 
-## Data
+---
 
-Pontianak entries in `src/data/cafes.ts` are gathered from Google Maps using the pipeline in `tools/scraper/` (hours, prices, and facilities may change over time). Entries in the other seven cities are still placeholders for UI development.
+## Repository Layout
+
+```text
+docs/             README visual assets
+public/assets/    city landmark cards, icons, physics beans, and textures
+src/
+  data/           cafe schema, 6-city metadata, and scraped dataset
+  lib/            filtering, sorting, URL sync, bucketlist, suggestions, and Web Audio cues
+  runtime/        directory, random picker, bucketlist drawer, and suggestion tab runtime
+  styles/         base, catalog UI, mobile hero, and font stylesheets
+  vendor/         interactive carousel, manifesto reveal, and physics islands
+tools/scraper/    Playwright Google Maps scraper, normalizer, and Cafe[] exporter
+index.html        main single-page markup
+```
+
+---
+
+## Cafe Data & Scraper Pipeline
+
+Entries in `src/data/cafes.ts` are collected from Google Maps using the scripts in
+[`tools/scraper/`](./tools/scraper/README.md) (`scrape-places.mjs` -> `normalize-city.mjs` ->
+`export-cafes.mjs`). Opening hours, price ranges, and facilities may change over time.
+
+Contact & suggestions: [`support@nongki.me`](mailto:support@nongki.me)
+
+---
 
 ## License
 
-[MIT](LICENSE)
+Released under the [MIT License](LICENSE).
