@@ -56,7 +56,7 @@ src/main.ts, src/test/setup.ts
 
 ## Hard rules
 
-1. **UI copy must stay Indonesian.** Do not mix English into user-facing text. Established terms: `Pilih Acak` (random picker), `Kafe Pilihan Hari Ini` (cafe of the day), `Daftar Simpan` (bucketlist), `Ramah Kerja` (work-friendly), `Estetik` (aesthetic), `Ramah Hewan` (pet-friendly), `Buka Malam` (late-night), `Kawasan`/`Kota` (city).
+1. **UI copy must stay natural Gen-Z Indonesian.** Keep primary prose in Indonesian and permit natural everyday loanwords already used by the audience (`spot`, `vibe`, `WFC`, `coffee shop`, `budget`, `link`, `explore`), while avoiding stiff boilerplate or awkward Indonesian prefixes attached to English verbs. Established terms: `Pilih Acak` (random picker), `Kafe Pilihan Hari Ini` (cafe of the day), `Daftar Simpan` (bucketlist), `Ramah Kerja` (work-friendly), `Estetik` (aesthetic), `Ramah Hewan` (pet-friendly), `Buka Malam` (late-night), `Kawasan`/`Kota` (city).
 2. **Do not reintroduce Shopify concepts** (cart, checkout, `/products/`, `/collections/`, `data-cart-*`, `window.AC`, `shopify:section:load`). They were removed on purpose; `main.test.ts` asserts some of this stays gone.
 3. **Cafe data is dummy.** `src/data/cafes.ts` contains fictional names/links/hours for development and demos. Never present it as verified, never use real business names, never claim "Terbaik di Indonesia" as fact. Replacing it with curated data is an open task, intentionally deferred.
 4. **Keep the `shopify-section-template--…__*` IDs in `index.html`.** `src/main.test.ts` asserts they exist. They're just stable section IDs now; don't "clean them up".

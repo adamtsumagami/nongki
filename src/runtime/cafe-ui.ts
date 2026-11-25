@@ -80,6 +80,22 @@ function esc(value: unknown): string {
   return String(value).replace(/[&<>"']/g, (char) => HTML_ENTITIES[char] ?? char);
 }
 
+function isGenericTagline(tagline: string): boolean {
+  return /\bdi kawasan\b/i.test(tagline);
+}
+
+function isGenericDescription(description: string): boolean {
+  return /\byang berlokasi di\b/i.test(description);
+}
+
+function isGenericMenuHighlights(menu: readonly string[]): boolean {
+  const joinedMenu = menu.map((item) => item.trim().toLowerCase()).join('|');
+  return (
+    joinedMenu === 'kopi susu|espresso|non-kopi' ||
+    joinedMenu === 'kopi hitam|kopi susu|roti bakar'
+  );
+}
+
 function safeImageUrl(raw?: string): string | null {
   const value = (raw ?? '').trim();
   if (!value) return null;
@@ -244,10 +260,6 @@ function renderCafeOfTheDay(container: HTMLElement): void {
       <div class="cod__art">
         <span class="cod__mono">${esc(getInitials(cafe.name))}</span>
         ${cafePhotoMarkup(cafe)}
-        <div class="cod__art-badges">
-          <span class="cod__art-area">${esc(cafe.city)}</span>
-          <span class="cod__art-price">${esc(PRICE_LEVEL_SHORT[cafe.priceLevel])}</span>
-        </div>
       </div>
       <div class="cod__body">
         <div class="cod__row">
@@ -255,7 +267,7 @@ function renderCafeOfTheDay(container: HTMLElement): void {
           <div class="cod__badges"><span class="cc__status${status.open ? ' is-open' : ''}"><i></i>${esc(status.label)}</span></div>
         </div>
         <h3 class="cod__name">${esc(cafe.name)}</h3>
-        <p class="cod__tag">${esc(cafe.tagline)}</p>
+        ${isGenericTagline(cafe.tagline) ? '' : `<p class="cod__tag">${esc(cafe.tagline)}</p>`}
         <div class="cod__facts">
           <span><b>★ ${esc(cafe.rating.toFixed(1))}</b>${cafe.reviewCount > 0 ? ` ${esc(formatReviewCount(cafe.reviewCount))} ulasan` : ''}</span>
           <span>${esc(cafe.priceRange)}</span>
@@ -594,6 +606,7 @@ function renderCafeCard(
   hiddenExtra = false,
 ): string {
   const tags = [...cafe.vibes.slice(0, 2), ...cafe.facilities.slice(0, 2)];
+  const hasCustomMenu = !isGenericMenuHighlights(cafe.menuHighlights);
 
   return `
     <article class="cc" data-cafe-card="${esc(cafe.id)}" style="--cc-accent:${esc(cafe.accentColor)}"${hiddenExtra ? ' hidden' : ''}>
@@ -601,7 +614,7 @@ function renderCafeCard(
       <div class="cc__main">
         <div class="cc__topline"><span class="cc__area">${esc(cafe.city)} · ${esc(cafe.area)}</span>${statusMarkup(cafe, now)}</div>
         <h3 class="cc__name">${esc(cafe.name)}</h3>
-        <p class="cc__tagline">${esc(cafe.tagline)}</p>
+        ${isGenericTagline(cafe.tagline) ? '' : `<p class="cc__tagline">${esc(cafe.tagline)}</p>`}
         <div class="cc__meta"><span><b>★ ${esc(cafe.rating.toFixed(1))}</b></span>${cafe.reviewCount > 0 ? `<span>${esc(formatReviewCount(cafe.reviewCount))} ulasan</span>` : ''}<span>${esc(PRICE_LEVEL_SHORT[cafe.priceLevel])}</span><span>${esc(formatHours(cafe))}</span></div>
         <div class="cc__tags">${tags.map((tag) => `<span>${esc(tag)}</span>`).join('')}</div>
       </div>
@@ -614,21 +627,21 @@ function renderCafeCard(
         </div>
       </div>
       <details class="cc__more"${autoExpand ? ' open' : ''}>
-        <summary>Detail, fasilitas &amp; menu</summary>
+        <summary>${hasCustomMenu ? 'Detail, fasilitas &amp; menu' : 'Detail &amp; alamat'}</summary>
         <div class="cc__dossier">
-          <p class="cc__desc">${esc(cafe.description)}</p>
+          ${isGenericDescription(cafe.description) ? '' : `<p class="cc__desc">${esc(cafe.description)}</p>`}
           <div class="cc__dgrid">
             <div>
               <span class="cc__dk">Cocok untuk</span>
               <p class="cc__dv">${esc(cafe.bestFor)}</p>
             </div>
             <div>
-              <span class="cc__dk">Kisaran harga</span>
+              <span class="cc__dk">Budget</span>
               <p class="cc__dv">${esc(cafe.priceRange)} per orang</p>
             </div>
           </div>
-          ${cafe.facilities.length > 0 ? `<div class="cc__drow"><span class="cc__dk">Fasilitas</span><div class="cc__dfacs">${cafe.facilities.map((f) => `<span>${esc(f)}</span>`).join('')}</div></div>` : ''}
-          <div class="cc__drow"><span class="cc__dk">Menu andalan</span><div class="cc__menu">${cafe.menuHighlights.map((item) => `<span>${esc(item)}</span>`).join('')}</div></div>
+          ${cafe.facilities.length > 2 ? `<div class="cc__drow"><span class="cc__dk">Fasilitas</span><div class="cc__dfacs">${cafe.facilities.map((f) => `<span>${esc(f)}</span>`).join('')}</div></div>` : ''}
+          ${hasCustomMenu ? `<div class="cc__drow"><span class="cc__dk">Menu andalan</span><div class="cc__menu">${cafe.menuHighlights.map((item) => `<span>${esc(item)}</span>`).join('')}</div></div>` : ''}
           <p class="cc__addr">${ICONS.pin}<span>${esc(cafe.address)}</span></p>
         </div>
       </details>
@@ -889,7 +902,7 @@ function renderPickerHint(picker: HTMLElement): void {
   const button = picker.querySelector<HTMLButtonElement>('[data-picker-spin]');
   const total = pickerPool().length;
 
-  const vibeLabel = pickerVibe ? `suasana ${pickerVibe}` : 'semua suasana';
+  const vibeLabel = pickerVibe ? `vibe ${pickerVibe}` : 'semua vibe';
   const openLabel = pickerOpenNow ? ' · buka sekarang' : '';
 
   if (pickerLocationMode === 'auto') {
@@ -923,11 +936,11 @@ function renderPickerHint(picker: HTMLElement): void {
           ? '<button class="picker__hint-btn" type="button" data-picker-widen-radius="20">Perluas ke 20 km</button>'
           : '<button class="picker__hint-btn" type="button" data-picker-switch-manual>Atur lokasimu</button>';
 
-      out.innerHTML = `<div class="picker__hint"><span class="picker__stage-badge">0 kandidat</span><p>Belum ada kafe dalam radius <b>${pickerRadiusKm} km</b> (${esc(vibeLabel)}${esc(openLabel)}).${esc(nearestNote)}</p>${actionBtn}</div>`;
+      out.innerHTML = `<div class="picker__hint"><span class="picker__stage-badge">0 spot</span><p>Belum ada kafe dalam radius <b>${pickerRadiusKm} km</b> (${esc(vibeLabel)}${esc(openLabel)}).${esc(nearestNote)}</p>${actionBtn}</div>`;
       return;
     }
 
-    out.innerHTML = `<div class="picker__hint"><span class="picker__stage-badge">${total} kandidat siap diacak</span><div class="picker__stage-dice" aria-hidden="true">${ICONS.dice}</div><p>Ada <b>${total}</b> kafe dalam radius <b>${pickerRadiusKm} km</b> (${esc(vibeLabel)}${esc(openLabel)}). Tekan tombol pilih, biar Nongki menentukan tujuanmu.</p></div>`;
+    out.innerHTML = `<div class="picker__hint"><span class="picker__stage-badge">${total} spot siap diacak</span><div class="picker__stage-dice" aria-hidden="true">${ICONS.dice}</div><p>Radius <b>${pickerRadiusKm} km</b> (${esc(vibeLabel)}${esc(openLabel)}). Klik pilih, biar Nongki pilihin buatmu.</p></div>`;
     return;
   }
 
@@ -942,11 +955,11 @@ function renderPickerHint(picker: HTMLElement): void {
         : pickerCity;
 
   if (total === 0) {
-    out.innerHTML = `<div class="picker__hint"><span class="picker__stage-badge">0 kandidat</span><p>Belum ada kafe yang cocok untuk <b>${esc(cityLabel)}</b> (${esc(vibeLabel)}${esc(openLabel)}). Coba ubah atau longgarkan filter.</p></div>`;
+    out.innerHTML = `<div class="picker__hint"><span class="picker__stage-badge">0 spot</span><p>Belum ada kafe yang cocok untuk <b>${esc(cityLabel)}</b> (${esc(vibeLabel)}${esc(openLabel)}). Coba ubah atau longgarkan filter.</p></div>`;
     return;
   }
 
-  out.innerHTML = `<div class="picker__hint"><span class="picker__stage-badge">${total} kandidat siap diacak</span><div class="picker__stage-dice" aria-hidden="true">${ICONS.dice}</div><p>Ada <b>${total}</b> kafe di <b>${esc(cityLabel)}</b> (${esc(vibeLabel)}${esc(openLabel)}). Tekan tombol pilih, biar Nongki menentukan tujuanmu.</p></div>`;
+  out.innerHTML = `<div class="picker__hint"><span class="picker__stage-badge">${total} spot siap diacak</span><div class="picker__stage-dice" aria-hidden="true">${ICONS.dice}</div><p>Area <b>${esc(cityLabel)}</b> (${esc(vibeLabel)}${esc(openLabel)}). Klik pilih, biar Nongki pilihin buatmu.</p></div>`;
 }
 
 function renderPickerQuick(picker: HTMLElement): void {
@@ -1063,7 +1076,7 @@ function renderPickerCard(cafe: Cafe, now: Date): string {
           <span class="cc__status${status.open ? ' is-open' : ''}"><i></i>${esc(status.label)}</span>
         </div>
         <h3 class="rcard__name">${esc(cafe.name)}</h3>
-        <p class="rcard__tag">${esc(cafe.tagline)}</p>
+        ${isGenericTagline(cafe.tagline) ? '' : `<p class="rcard__tag">${esc(cafe.tagline)}</p>`}
         <div class="rcard__meta">
           <span><b>★ ${esc(cafe.rating.toFixed(1))}</b></span>
           ${cafe.reviewCount > 0 ? `<span>${esc(formatReviewCount(cafe.reviewCount))} ulasan</span>` : ''}

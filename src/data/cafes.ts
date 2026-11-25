@@ -2,8 +2,8 @@
  * Katalog kafe dan warung kopi Nongki untuk seluruh Indonesia.
  *
  * Catatan data:
- * - Data Pontianak dihimpun dari Google Maps melalui pipeline tools/scraper/.
- *   Kota lainnya masih memakai data contoh untuk pengembangan.
+ * - Data 6 kota saat ini dihimpun dari Google Maps melalui pipeline tools/scraper/
+ *   dan akan diperbarui dengan daftar menu serta kurasi lewat admin panel.
  * - `opensAt` / `closesAt` memakai format 24 jam "HH:MM" menurut zona waktu
  *   kota masing-masing (WIB, WITA, atau WIT).
  * - `open24` menandai tempat yang buka non-stop.

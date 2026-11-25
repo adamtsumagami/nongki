@@ -762,5 +762,67 @@ describe('Nongki Platform', () => {
     expect(directoryPane.hidden).toBe(false);
     expect(suggestPane.hidden).toBe(true);
   });
+
+  it('removes legacy duplicate blocks and hides boilerplate copy on rendered cafe cards', () => {
+    expect(document.querySelector('.hero-m__name')?.textContent?.trim()).toBe('Pontianak');
+    expect(document.querySelector('.hs.apart')).toBeNull();
+    expect(document.querySelector('.save')).toBeNull();
+    expect(document.querySelector('.more')).toBeNull();
+    expect(document.querySelector('.catalog__stats')).toBeNull();
+    expect(document.querySelector('#direktori [data-stat-total]')?.textContent?.trim()).not.toBe('');
+
+    const navPickerLinks = document.querySelectorAll('.underlay-nav__menu a[href="#random-picker"]');
+    const navAboutLinks = document.querySelectorAll('.underlay-nav__menu a[href="#tentang"]');
+    expect(navPickerLinks).toHaveLength(1);
+    expect(navAboutLinks).toHaveLength(1);
+
+    const firstCard = document.querySelector('#direktori .cc');
+    expect(firstCard).not.toBeNull();
+    const cardText = firstCard?.textContent ?? '';
+    expect(cardText).not.toMatch(/di kawasan/i);
+    expect(cardText).not.toMatch(/yang berlokasi di/i);
+    expect(cardText).not.toContain('Menu andalan');
+  });
+
+  it('configures nongki.me canonical SEO metadata, JSON-LD schema, OG banner, and SVG-first favicons', () => {
+    const doc = new DOMParser().parseFromString(rawHtml, 'text/html');
+    const canonical = doc.head.querySelector('link[rel="canonical"]');
+    expect(canonical?.getAttribute('href')).toBe('https://nongki.me/');
+
+    expect(doc.head.querySelector('meta[property="og:url"]')?.getAttribute('content')).toBe(
+      'https://nongki.me/',
+    );
+    expect(doc.head.querySelector('meta[property="og:image"]')?.getAttribute('content')).toBe(
+      'https://nongki.me/assets/og-image.png',
+    );
+    expect(doc.head.querySelector('meta[name="twitter:image"]')?.getAttribute('content')).toBe(
+      'https://nongki.me/assets/og-image.png',
+    );
+    expect(doc.head.querySelector('meta[name="twitter:card"]')?.getAttribute('content')).toBe(
+      'summary_large_image',
+    );
+
+    const iconLinks = Array.from(doc.head.querySelectorAll('link[rel="icon"]'));
+    expect(iconLinks[0]?.getAttribute('href')).toBe('/assets/nongki-icon.svg');
+    expect(
+      doc.head.querySelector('link[rel="icon"][sizes="48x48"]')?.getAttribute('href'),
+    ).toBe('/assets/favicon-48.png');
+    expect(
+      doc.head.querySelector('link[rel="icon"][sizes="192x192"]')?.getAttribute('href'),
+    ).toBe('/assets/favicon-192.png');
+    expect(doc.head.querySelector('link[rel="shortcut icon"]')?.getAttribute('href')).toBe(
+      '/favicon.ico',
+    );
+    expect(doc.head.querySelector('link[rel="manifest"]')?.getAttribute('href')).toBe(
+      '/site.webmanifest',
+    );
+
+    const ldScript = doc.head.querySelector('script[type="application/ld+json"]');
+    expect(ldScript?.textContent).toBeTruthy();
+    const ldJson = JSON.parse(ldScript!.textContent!);
+    expect(Array.isArray(ldJson['@graph'])).toBe(true);
+    expect(JSON.stringify(ldJson)).toContain('https://nongki.me/');
+    expect(JSON.stringify(ldJson)).toContain('https://nongki.me/assets/favicon-512.png');
+  });
 });
 

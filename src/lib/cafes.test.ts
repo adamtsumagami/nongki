@@ -296,20 +296,20 @@ describe('sinkronisasi query URL', () => {
 describe('berbagi kafe & daftar simpan', () => {
   it('membentuk URL berbagi yang terfilter dan menolak skema non-http', () => {
     const cafe = CAFES_DATA[0];
-    const url = buildCafeShareUrl(cafe, 'https://nongki.id/?foo=bar#old');
-    expect(url.startsWith('https://nongki.id/?')).toBe(true);
+    const url = buildCafeShareUrl(cafe, 'https://nongki.me/?foo=bar#old');
+    expect(url.startsWith('https://nongki.me/?')).toBe(true);
     expect(url.endsWith('#direktori')).toBe(true);
     const parsed = parseCatalogSearchParams(new URL(url).search);
     expect(parsed.city).toBe(cafe.city);
     expect(parsed.query).toBe(cafe.name);
 
     const safeFallback = buildCafeShareUrl(cafe, 'javascript:alert(1)');
-    expect(safeFallback.startsWith('https://nongki.id/?')).toBe(true);
+    expect(safeFallback.startsWith('https://nongki.me/?')).toBe(true);
   });
 
   it('memformat teks berbagi kafe dan daftar simpan', () => {
     const cafe = CAFES_DATA[0];
-    const url = buildCafeShareUrl(cafe, 'https://nongki.id/');
+    const url = buildCafeShareUrl(cafe, 'https://nongki.me/');
     const cafeText = formatCafeShareText(cafe, url);
     expect(cafeText).toContain(cafe.name);
     expect(cafeText).toContain(url);

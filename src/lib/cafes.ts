@@ -386,12 +386,12 @@ export function buildCafeShareUrl(cafe: Cafe, currentUrl: string): string {
   try {
     const candidate = new URL(currentUrl);
     if (candidate.protocol !== 'http:' && candidate.protocol !== 'https:') {
-      parsed = new URL('https://nongki.id/');
+      parsed = new URL('https://nongki.me/');
     } else {
       parsed = new URL(`${candidate.origin}${candidate.pathname}`);
     }
   } catch {
-    parsed = new URL('https://nongki.id/');
+    parsed = new URL('https://nongki.me/');
   }
 
   parsed.search = serializeCatalogSearchParams({ city: cafe.city, query: cafe.name });
